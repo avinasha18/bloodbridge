@@ -1,0 +1,14 @@
+[
+  {
+    "Name": "bin-proactive-scheduler-daily",
+    "ScheduleExpression": "cron(30 0 * * ? *)",
+    "Description": "Daily 6:00 AM IST - creates blood requests 7 days before scheduled transfusions.",
+    "TargetLambda": "bin-proactive-scheduler"
+  },
+  {
+    "Name": "bin-failure-analyzer-daily",
+    "ScheduleExpression": "cron(30 20 * * ? *)",
+    "Description": "Daily 2:00 AM IST - Bedrock analyzes failures and updates system_protocols.",
+    "TargetLambda": "bin-failure-analyzer"
+  }
+]

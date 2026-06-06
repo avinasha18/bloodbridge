@@ -1,0 +1,35 @@
+{
+  "tables": [
+    {
+      "TableName": "bin-response-tokens",
+      "BillingMode": "PAY_PER_REQUEST",
+      "AttributeDefinitions": [{ "AttributeName": "token", "AttributeType": "S" }],
+      "KeySchema": [{ "AttributeName": "token", "KeyType": "HASH" }],
+      "TimeToLiveSpecification": { "AttributeName": "expires_at_epoch", "Enabled": true }
+    },
+    {
+      "TableName": "bin-active-requests",
+      "BillingMode": "PAY_PER_REQUEST",
+      "AttributeDefinitions": [{ "AttributeName": "request_id", "AttributeType": "S" }],
+      "KeySchema": [{ "AttributeName": "request_id", "KeyType": "HASH" }]
+    },
+    {
+      "TableName": "bin-donor-availability",
+      "BillingMode": "PAY_PER_REQUEST",
+      "AttributeDefinitions": [{ "AttributeName": "donor_id", "AttributeType": "S" }],
+      "KeySchema": [{ "AttributeName": "donor_id", "KeyType": "HASH" }]
+    },
+    {
+      "TableName": "bin-metrics",
+      "BillingMode": "PAY_PER_REQUEST",
+      "AttributeDefinitions": [
+        { "AttributeName": "metric_date", "AttributeType": "S" },
+        { "AttributeName": "metric_name", "AttributeType": "S" }
+      ],
+      "KeySchema": [
+        { "AttributeName": "metric_date", "KeyType": "HASH" },
+        { "AttributeName": "metric_name", "KeyType": "RANGE" }
+      ]
+    }
+  ]
+}

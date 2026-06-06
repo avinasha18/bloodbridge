@@ -1,0 +1,119 @@
+{
+  "Comment": "BloodBridge Intelligence Network - Request Orchestrator",
+  "StartAt": "ValidateRequest",
+  "States": {
+    "ValidateRequest": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:${AWS_REGION}:${ACCOUNT_ID}:function:bin-request-validator",
+      "ResultPath": "$.validation",
+      "Next": "ClassifyUrgency"
+    },
+
+    "ClassifyUrgency": {
+      "Type": "Choice",
+      "Choices": [
+        { "Variable": "$.urgency", "StringEquals": "critical", "Next": "MatchDonors" },
+        { "Variable": "$.urgency", "StringEquals": "urgent",   "Next": "MatchDonors" }
+      ],
+      "Default": "MatchDonors"
+    },
+
+    "MatchDonors": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:${AWS_REGION}:${ACCOUNT_ID}:function:bin-donor-matcher",
+      "ResultPath": "$.match",
+      "Next": "HasEligibleDonors"
+    },
+
+    "HasEligibleDonors": {
+      "Type": "Choice",
+      "Choices": [
+        { "Variable": "$.match.donor_count", "NumericGreaterThan": 0, "Next": "SendOutreachBatch" }
+      ],
+      "Default": "AlertAdminNoSupply"
+    },
+
+    "SendOutreachBatch": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:${AWS_REGION}:${ACCOUNT_ID}:function:bin-outreach-sender",
+      "Parameters": {
+        "request_id.$": "$.request_id",
+        "donor_ids.$": "$.match.donors[*].donor_id",
+        "batch_number.$": "$.escalation_level"
+      },
+      "ResultPath": "$.outreach",
+      "Next": "WaitForDonorResponse"
+    },
+
+    "WaitForDonorResponse": {
+      "Type": "Wait",
+      "SecondsPath": "$.wait_seconds",
+      "Next": "EvaluateResponses"
+    },
+
+    "EvaluateResponses": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:${AWS_REGION}:${ACCOUNT_ID}:function:bin-response-evaluator",
+      "ResultPath": "$.eval",
+      "Next": "SufficientDonorsConfirmed"
+    },
+
+    "SufficientDonorsConfirmed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.eval.confirmed_count",
+          "NumericGreaterThanEqualsPath": "$.units_needed",
+          "Next": "ConfirmAndNotify"
+        },
+        {
+          "Variable": "$.escalation_level",
+          "NumericGreaterThanEquals": 3,
+          "Next": "MaxEscalationReached"
+        }
+      ],
+      "Default": "EscalateRequest"
+    },
+
+    "EscalateRequest": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:${AWS_REGION}:${ACCOUNT_ID}:function:bin-escalation-trigger",
+      "ResultPath": "$.escalation",
+      "Next": "MatchDonors"
+    },
+
+    "ConfirmAndNotify": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:${AWS_REGION}:${ACCOUNT_ID}:function:bin-confirmation-sender",
+      "ResultPath": "$.confirmation",
+      "Next": "UpdateDonorScores"
+    },
+
+    "UpdateDonorScores": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:${AWS_REGION}:${ACCOUNT_ID}:function:bin-score-updater",
+      "ResultPath": "$.score_update",
+      "Next": "FulfillmentComplete"
+    },
+
+    "FulfillmentComplete": { "Type": "Succeed" },
+
+    "MaxEscalationReached": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:${AWS_REGION}:${ACCOUNT_ID}:function:bin-admin-escalation",
+      "Next": "RequestFailed"
+    },
+
+    "AlertAdminNoSupply": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:${AWS_REGION}:${ACCOUNT_ID}:function:bin-admin-escalation",
+      "Next": "RequestFailed"
+    },
+
+    "RequestFailed": {
+      "Type": "Fail",
+      "Error": "NoSufficientDonors",
+      "Cause": "Exhausted all escalation levels"
+    }
+  }
+}
