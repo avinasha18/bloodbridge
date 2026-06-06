@@ -46,6 +46,7 @@ export default {
       },
       boxShadow: {
         card: "0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px -4px rgb(0 0 0 / 0.06)",
+        elevated: "0 4px 24px -4px rgb(0 0 0 / 0.08), 0 8px 32px -8px rgb(99 102 241 / 0.08)",
       },
     },
   },

@@ -14,14 +14,14 @@ const NAV = [
     to: "/me",
     labelKey: "patient_panel",
     icon: Heart,
-    sub: "I need blood",
+    sub: "Patient registration",
     accent: "emerald",
   },
   {
     to: "/donor",
     labelKey: "donor_panel",
     icon: Sparkles,
-    sub: "My donation history",
+    sub: "Donor history",
     accent: "indigo",
   },
 ];

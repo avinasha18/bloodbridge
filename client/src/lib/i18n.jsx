@@ -9,7 +9,7 @@ export const LANGUAGES = [
 const STRINGS = {
   en: {
     donate_panel: "Donate Blood",
-    patient_panel: "My Dashboard",
+    patient_panel: "Need Blood",
     track_panel: "Track",
     donor_panel: "My Donations",
     donate_hero_pill: "Donate to someone who needs you today",

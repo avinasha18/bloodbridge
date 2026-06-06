@@ -5,6 +5,21 @@ export const BLOOD_GROUPS = [
   "AB Positive", "AB Negative",
 ];
 
+const BLOOD_GROUP_SET = new Set(BLOOD_GROUPS);
+
+/** True for the 8 standard ABO/Rh groups used in forms and matching. */
+export function isStandardBloodGroup(bg) {
+  if (!bg) return false;
+  return BLOOD_GROUP_SET.has(String(bg).trim());
+}
+
+/** Consistent chart ordering (universal donor first, then A/B/AB). */
+export const BLOOD_GROUP_CHART_ORDER = BLOOD_GROUPS;
+
+export function filterStandardShortages(shortages = []) {
+  return (shortages || []).filter(isStandardBloodGroup);
+}
+
 export const URGENCY_LEVELS = ["critical", "urgent", "routine"];
 
 /** Plain-language labels for coordinators (not engineers). */
@@ -42,19 +57,35 @@ export function urgencyLabel(urgency) {
 }
 
 export const STATUS_COLORS = {
-  pending: "bg-ink-100 text-ink-700",
-  matching: "bg-amber-100 text-amber-800",
-  outreach_sent: "bg-indigo-100 text-indigo-800",
-  reserved: "bg-violet-100 text-violet-800",
-  confirmed: "bg-emerald-100 text-emerald-800",
-  fulfilled: "bg-emerald-200 text-emerald-900",
-  failed: "bg-blood-100 text-blood-800",
+  pending: "bg-slate-50 text-slate-700 border-slate-200",
+  matching: "bg-amber-50 text-amber-800 border-amber-200",
+  outreach_sent: "bg-sky-50 text-sky-800 border-sky-200",
+  reserved: "bg-violet-50 text-violet-800 border-violet-200",
+  confirmed: "bg-emerald-50 text-emerald-800 border-emerald-200",
+  fulfilled: "bg-emerald-100 text-emerald-900 border-emerald-300",
+  failed: "bg-rose-50 text-rose-800 border-rose-200",
+};
+
+export const STATUS_DOT_COLORS = {
+  pending: "bg-slate-400",
+  matching: "bg-amber-500",
+  outreach_sent: "bg-sky-500",
+  reserved: "bg-violet-500",
+  confirmed: "bg-emerald-500",
+  fulfilled: "bg-emerald-600",
+  failed: "bg-rose-500",
 };
 
 export const URGENCY_COLORS = {
-  critical: "bg-blood-600 text-white",
-  urgent: "bg-orange-500 text-white",
-  routine: "bg-ink-200 text-ink-700",
+  critical: "bg-rose-600 text-white border-rose-700 shadow-sm",
+  urgent: "bg-orange-500 text-white border-orange-600",
+  routine: "bg-slate-100 text-slate-600 border-slate-200",
+};
+
+export const URGENCY_DOT_COLORS = {
+  critical: "bg-white",
+  urgent: "bg-white",
+  routine: "bg-slate-400",
 };
 
 export function formatDateTime(value) {
@@ -92,7 +123,10 @@ export function relativeTime(value) {
 }
 
 export function bloodChipColor(bg) {
-  if (!bg) return "bg-ink-100 text-ink-700";
-  if (bg.endsWith("Negative")) return "bg-blood-100 text-blood-800";
-  return "bg-rose-50 text-rose-700";
+  if (!bg) return "bg-slate-50 text-slate-600 border-slate-200";
+  if (bg.startsWith("O")) return "bg-rose-50 text-rose-800 border-rose-200";
+  if (bg.startsWith("A")) return "bg-red-50 text-red-800 border-red-200";
+  if (bg.startsWith("B")) return "bg-orange-50 text-orange-900 border-orange-200";
+  if (bg.startsWith("AB")) return "bg-violet-50 text-violet-800 border-violet-200";
+  return "bg-slate-50 text-slate-700 border-slate-200";
 }

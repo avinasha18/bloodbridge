@@ -8,6 +8,7 @@ from typing import Dict, List
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
+from app.blood_groups import STANDARD_BLOOD_GROUPS, is_standard_blood_group
 from app.db.models import (
     BloodRequest,
     Donor,
@@ -118,7 +119,9 @@ def dashboard_metrics(db: Session) -> Dict:
 
     blood_supply = blood_group_supply(db)
     critical_shortages = [
-        bg for bg, count in blood_supply.items() if count < CRITICAL_THRESHOLD.get(bg, 50)
+        bg
+        for bg in STANDARD_BLOOD_GROUPS
+        if blood_supply.get(bg, 0) < CRITICAL_THRESHOLD.get(bg, 50)
     ]
 
     return {
@@ -145,7 +148,11 @@ def blood_group_supply(db: Session) -> Dict[str, int]:
         .group_by(Donor.blood_group)
         .all()
     )
-    return {bg or "Unknown": int(c) for bg, c in rows}
+    counts = {bg: 0 for bg in STANDARD_BLOOD_GROUPS}
+    for bg, c in rows:
+        if is_standard_blood_group(bg):
+            counts[bg] += int(c)
+    return {bg: counts[bg] for bg in STANDARD_BLOOD_GROUPS if counts[bg] > 0}
 
 
 def reliability_distribution(db: Session) -> List[Dict]:
@@ -188,6 +195,7 @@ def failure_trends(db: Session, days: int = 14) -> List[Dict]:
             "failure_count": int(r.count),
         }
         for r in rows
+        if is_standard_blood_group(r.blood_group)
     ]
 
 

@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Plus, Filter } from "lucide-react";
+import { Plus, Droplets, Filter, ChevronRight } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
-import { Section } from "../components/ui/Card";
+import { Section, InfoBanner } from "../components/ui/Card";
 import {
   StatusBadge,
   UrgencyBadge,
@@ -17,6 +17,7 @@ import { BLOOD_GROUPS, URGENCY_LEVELS, relativeTime, STATUS_LABELS, urgencyLabel
 const STATUSES = Object.keys(STATUS_LABELS);
 
 export default function Requests() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({ status: "", blood_group: "", urgency: "" });
 
   const params = {
@@ -26,110 +27,152 @@ export default function Requests() {
     ...(filters.urgency && { urgency: filters.urgency }),
   };
 
+  const activeFilterCount = [filters.status, filters.blood_group, filters.urgency].filter(Boolean).length;
+
   const { data, loading } = usePoll(
     () => endpoints.listRequests(params),
     10_000,
     [filters.status, filters.blood_group, filters.urgency],
   );
 
+  const items = data?.items || [];
+  const urgentCount = items.filter((r) => r.urgency !== "routine" && !["fulfilled", "failed"].includes(r.status)).length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Blood Needs"
-        subtitle="Every row is one hospital blood request. Click it to see donor ranking, SMS messages, and your action buttons."
+        subtitle="Every row is one hospital request. Click a row to rank donors, send SMS, and track progress."
+        badge={
+          data?.total != null ? (
+            <Pill tone="info" dot>{data.total} total</Pill>
+          ) : null
+        }
         actions={
           <Link to="/requests/new" className="btn-primary">
             <Plus className="w-4 h-4" />
-            New Blood Need
+            New blood need
           </Link>
         }
       />
 
-      <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 text-sm text-indigo-900">
-        <strong>Where is SMS & ranking?</strong> Click any blood need below. On that page you will
-        see: (1) text messages sent, (2) best donors ranked, (3) buttons to send hospital address
-        and mark donated.
-      </div>
+      {urgentCount > 0 && (
+        <InfoBanner tone="warn">
+          <strong>{urgentCount} urgent need{urgentCount > 1 ? "s" : ""}</strong> need attention —
+          open them to send SMS to top-ranked donors.
+        </InfoBanner>
+      )}
 
       <Section
-        title="Filters"
-        action={
-          <button
-            className="text-xs text-ink-500 hover:underline"
-            onClick={() => setFilters({ status: "", blood_group: "", urgency: "" })}
-          >
-            Clear
-          </button>
+        title={
+          <span className="inline-flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-ink-400" />
+            Filters
+            {activeFilterCount > 0 && (
+              <Pill tone="violet">{activeFilterCount} active</Pill>
+            )}
+          </span>
         }
+        action={
+          activeFilterCount > 0 ? (
+            <button
+              className="text-xs text-blood-600 hover:underline font-medium"
+              onClick={() => setFilters({ status: "", blood_group: "", urgency: "" })}
+            >
+              Clear all
+            </button>
+          ) : null
+        }
+        noPadding
       >
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <Select
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <FilterSelect
             label="Status"
             value={filters.status}
             onChange={(v) => setFilters({ ...filters, status: v })}
-            options={STATUSES}
+            options={STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] || s }))}
           />
-          <Select
-            label="Blood Group"
+          <FilterSelect
+            label="Blood group"
             value={filters.blood_group}
             onChange={(v) => setFilters({ ...filters, blood_group: v })}
-            options={BLOOD_GROUPS}
+            options={BLOOD_GROUPS.map((b) => ({ value: b, label: b }))}
           />
-          <Select
+          <FilterSelect
             label="Urgency"
             value={filters.urgency}
             onChange={(v) => setFilters({ ...filters, urgency: v })}
-            options={URGENCY_LEVELS}
+            options={URGENCY_LEVELS.map((u) => ({ value: u, label: urgencyLabel(u) }))}
           />
         </div>
       </Section>
 
-      <Section title={`${data?.total ?? "—"} blood needs`}>
+      <Section
+        title={`${data?.total ?? "—"} blood needs`}
+        subtitle="Click any row for donor ranking, SMS timeline, and actions"
+        noPadding
+      >
         {loading ? (
-          <Empty message="Loading…" />
-        ) : data?.items?.length === 0 ? (
-          <Empty message="No requests match the current filters" />
+          <Empty message="Loading blood needs…" icon={Droplets} />
+        ) : items.length === 0 ? (
+          <Empty
+            message="No blood needs match your filters"
+            icon={Droplets}
+            action={
+              <Link to="/requests/new" className="btn-primary text-sm">
+                Create first blood need
+              </Link>
+            }
+          />
         ) : (
           <Table>
             <THead>
               <tr>
                 <TH>Blood</TH>
                 <TH>Hospital</TH>
-                <TH>How urgent</TH>
-                <TH>Units</TH>
+                <TH>Urgency</TH>
+                <TH align="center">Units</TH>
                 <TH>Status</TH>
                 <TH>Source</TH>
-                <TH>Search area</TH>
-                <TH>When</TH>
+                <TH>Radius</TH>
+                <TH>Created</TH>
+                <TH className="w-8" />
               </tr>
             </THead>
             <tbody>
-              {data?.items?.map((r) => (
-                <TR key={r.id}>
+              {items.map((r) => (
+                <TR
+                  key={r.id}
+                  highlight={r.urgency === "critical" && r.status !== "fulfilled"}
+                  onClick={() => navigate(`/requests/${r.id}`)}
+                >
                   <TD>
-                    <Link to={`/requests/${r.id}`}>
-                      <BloodGroupChip bloodGroup={r.blood_group} />
-                    </Link>
+                    <BloodGroupChip bloodGroup={r.blood_group} size="sm" />
+                  </TD>
+                  <TD primary className="max-w-[220px]">
+                    <span className="truncate block">{r.hospital_name || "—"}</span>
                   </TD>
                   <TD>
-                    <Link to={`/requests/${r.id}`} className="hover:underline">
-                      {r.hospital_name || "—"}
-                    </Link>
+                    <UrgencyBadge urgency={r.urgency} compact />
                   </TD>
-                  <TD><UrgencyBadge urgency={r.urgency} /></TD>
-                  <TD className="text-ink-600">{r.units_needed}</TD>
-                  <TD><StatusBadge status={r.status} /></TD>
+                  <TD align="center" muted>
+                    {r.units_needed}
+                  </TD>
+                  <TD>
+                    <StatusBadge status={r.status} compact />
+                  </TD>
                   <TD>
                     {r.is_proactive ? (
-                      <Pill tone="info">patient schedule</Pill>
+                      <Pill tone="info" dot>Scheduled</Pill>
                     ) : (
-                      <Pill>you created</Pill>
+                      <Pill dot>Manual</Pill>
                     )}
                   </TD>
-                  <TD className="text-ink-500 text-xs">
-                    {r.search_radius_km} km radius
+                  <TD muted>{r.search_radius_km} km</TD>
+                  <TD muted>{relativeTime(r.created_at)}</TD>
+                  <TD>
+                    <ChevronRight className="w-4 h-4 text-ink-300 group-hover:text-blood-500 transition-colors" />
                   </TD>
-                  <TD className="text-ink-500 text-xs">{relativeTime(r.created_at)}</TD>
                 </TR>
               ))}
             </tbody>
@@ -140,20 +183,18 @@ export default function Requests() {
   );
 }
 
-function Select({ label, value, onChange, options }) {
+function FilterSelect({ label, value, onChange, options }) {
   return (
     <label className="block">
-      <span className="text-xs font-medium text-ink-600">{label}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="input mt-1"
+        className="input mt-1.5 cursor-pointer"
       >
         <option value="">All</option>
         {options.map((o) => (
-          <option key={o} value={o}>
-            {label === "Status" ? STATUS_LABELS[o] || o : label === "Urgency" ? urgencyLabel(o) : o}
-          </option>
+          <option key={o.value} value={o.value}>{o.label}</option>
         ))}
       </select>
     </label>

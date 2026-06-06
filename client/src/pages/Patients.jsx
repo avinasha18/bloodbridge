@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Heart, Calendar } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
 import { Section } from "../components/ui/Card";
 import { BloodGroupChip, Pill } from "../components/ui/Badge";
@@ -33,64 +34,64 @@ export default function Patients() {
       />
 
       <Section
-        title="Transfusions in the Next 2 Weeks"
+        title="Transfusions in the next 2 weeks"
         subtitle={`${upcoming.data?.length ?? "—"} patients with upcoming appointments`}
+        noPadding
       >
         {upcoming.loading ? (
-          <Empty message="Loading…" />
+          <Empty message="Loading schedule…" icon={Calendar} />
         ) : upcoming.data?.length === 0 ? (
-          <Empty message="No transfusions scheduled in the next 14 days" />
+          <Empty message="No transfusions scheduled in the next 14 days" icon={Calendar} />
         ) : (
-          <div className="max-h-96 overflow-auto">
-            <Table>
-              <THead>
-                <tr>
-                  <TH>Patient</TH>
-                  <TH>Blood</TH>
-                  <TH>Hospital</TH>
-                  <TH>When</TH>
-                  <TH>Blood need created?</TH>
-                </tr>
-              </THead>
-              <tbody>
-                {upcoming.data?.map((t) => (
-                  <TR key={t.patient_id}>
-                    <TD className="font-medium">{t.name}</TD>
-                    <TD><BloodGroupChip bloodGroup={t.blood_group} /></TD>
-                    <TD className="text-xs max-w-[200px] truncate">{t.hospital_name}</TD>
-                    <TD className="text-xs">
-                      {formatDate(t.expected_next_transfusion_date)} (in {t.days_until}d)
-                    </TD>
-                    <TD>
-                      {t.proactive_request_created ? (
-                        <Pill tone="success">yes — see Blood Needs</Pill>
-                      ) : (
-                        <Pill tone="warn">not yet</Pill>
-                      )}
-                    </TD>
-                  </TR>
-                ))}
-              </tbody>
-            </Table>
-          </div>
+          <Table>
+            <THead>
+              <tr>
+                <TH>Patient</TH>
+                <TH>Blood</TH>
+                <TH>Hospital</TH>
+                <TH>When</TH>
+                <TH>Blood need</TH>
+              </tr>
+            </THead>
+            <tbody>
+              {upcoming.data?.map((t) => (
+                <TR key={t.patient_id}>
+                  <TD primary>{t.name}</TD>
+                  <TD><BloodGroupChip bloodGroup={t.blood_group} size="sm" /></TD>
+                  <TD muted className="max-w-[200px] truncate">{t.hospital_name}</TD>
+                  <TD muted>
+                    {formatDate(t.expected_next_transfusion_date)}
+                    <span className="ml-1 text-amber-700 font-medium">({t.days_until}d)</span>
+                  </TD>
+                  <TD>
+                    {t.proactive_request_created ? (
+                      <Pill tone="success" dot>Queued</Pill>
+                    ) : (
+                      <Pill tone="warn" dot>Pending</Pill>
+                    )}
+                  </TD>
+                </TR>
+              ))}
+            </tbody>
+          </Table>
         )}
       </Section>
 
-      <Section title="All Patients">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+      <Section title="All patients" noPadding>
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 border-b border-ink-100 bg-ink-50/30">
           <label className="block">
-            <span className="text-xs font-medium text-ink-600">Search</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Search</span>
             <input
-              className="input mt-1"
-              placeholder="name, hospital"
+              className="input mt-1.5"
+              placeholder="Name or hospital"
               value={filters.search}
               onChange={(e) => { setOffset(0); setFilters({ ...filters, search: e.target.value }); }}
             />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-ink-600">Blood Group</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Blood group</span>
             <select
-              className="input mt-1"
+              className="input mt-1.5"
               value={filters.blood_group}
               onChange={(e) => { setOffset(0); setFilters({ ...filters, blood_group: e.target.value }); }}
             >
@@ -101,9 +102,9 @@ export default function Patients() {
         </div>
 
         {list.loading ? (
-          <Empty message="Loading…" />
+          <Empty message="Loading patients…" icon={Heart} />
         ) : list.data?.items?.length === 0 ? (
-          <Empty message="No patients" />
+          <Empty message="No patients found" icon={Heart} />
         ) : (
           <>
             <Table>
@@ -111,39 +112,42 @@ export default function Patients() {
                 <tr>
                   <TH>Patient</TH>
                   <TH>Blood</TH>
-                  <TH>Patient phone</TH>
+                  <TH>Phone</TH>
                   <TH>Hospital</TH>
                   <TH>Coordinator</TH>
                   <TH>Source</TH>
-                  <TH>Next Transfusion</TH>
+                  <TH>Next transfusion</TH>
                 </tr>
               </THead>
               <tbody>
                 {list.data?.items?.map((p) => (
                   <TR key={p.id}>
-                    <TD className="font-medium">
+                    <TD primary>
                       {p.name}
                       {p.contact_name && p.contact_name !== p.name && (
-                        <div className="text-xs text-ink-500">via {p.contact_name}{p.relation_to_patient ? ` (${p.relation_to_patient})` : ""}</div>
+                        <div className="text-[11px] text-ink-500 font-normal mt-0.5">
+                          via {p.contact_name}
+                          {p.relation_to_patient ? ` · ${p.relation_to_patient}` : ""}
+                        </div>
                       )}
                     </TD>
-                    <TD><BloodGroupChip bloodGroup={p.blood_group} /></TD>
-                    <TD className="text-xs font-mono">{p.phone || "—"}</TD>
-                    <TD className="text-xs max-w-[200px] truncate">{p.hospital_name}</TD>
-                    <TD className="text-xs text-ink-600">{p.coordinator_name || "—"}</TD>
+                    <TD><BloodGroupChip bloodGroup={p.blood_group} size="sm" /></TD>
+                    <TD muted className="font-mono">{p.phone || "—"}</TD>
+                    <TD muted className="max-w-[180px] truncate">{p.hospital_name}</TD>
+                    <TD muted>{p.coordinator_name || "—"}</TD>
                     <TD>
                       {p.self_registered ? (
-                        <Pill tone="info">self-registered</Pill>
+                        <Pill tone="info" dot>Self-reg</Pill>
                       ) : (
-                        <Pill>existing</Pill>
+                        <Pill dot>Manual</Pill>
                       )}
                     </TD>
-                    <TD className="text-xs">{formatDate(p.expected_next_transfusion_date)}</TD>
+                    <TD muted>{formatDate(p.expected_next_transfusion_date)}</TD>
                   </TR>
                 ))}
               </tbody>
             </Table>
-            <div className="flex justify-between items-center pt-4 text-sm">
+            <div className="flex justify-between items-center px-4 py-3 border-t border-ink-100 text-sm bg-ink-50/30">
               <span className="text-ink-500">
                 Showing {offset + 1}–{offset + (list.data?.items?.length || 0)} of {list.data?.total}
               </span>

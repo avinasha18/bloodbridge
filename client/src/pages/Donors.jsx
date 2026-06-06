@@ -136,8 +136,8 @@ export default function Donors() {
         </Section>
       )}
 
-      <Section title="Filters">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <Section title="Filters" noPadding>
+        <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-3 bg-ink-50/30">
           <div>
             <label className="text-xs font-medium text-ink-600">Search</label>
             <div className="relative mt-1">
@@ -174,7 +174,11 @@ export default function Donors() {
         </div>
       </Section>
 
-      <Section title={`${data?.total?.toLocaleString() ?? "—"} donors`}>
+      <Section
+        title={`${data?.total?.toLocaleString() ?? "—"} donors`}
+        subtitle="Sorted by overall score — click a name for full profile"
+        noPadding
+      >
         {loading ? (
           <Empty message="Loading…" />
         ) : data?.items?.length === 0 ? (
@@ -206,10 +210,10 @@ export default function Donors() {
                     </TD>
                     <TD>
                       {d.blood_group
-                        ? <BloodGroupChip bloodGroup={d.blood_group} />
-                        : <Pill tone="warn">unknown</Pill>}
+                        ? <BloodGroupChip bloodGroup={d.blood_group} size="sm" />
+                        : <Pill tone="warn" dot>Unknown</Pill>}
                     </TD>
-                    <TD className="text-xs font-mono text-ink-700">{d.phone || "—"}</TD>
+                    <TD muted className="font-mono">{d.phone || "—"}</TD>
                     <TD><MiniBar value={Number(d.reliability_score) || 0} /></TD>
                     <TD><MiniBar value={Number(d.showup_rate) || 0} tone="emerald" /></TD>
                     <TD><MiniBar value={Number(d.overall_score) || 0} tone="amber" /></TD>
@@ -226,7 +230,7 @@ export default function Donors() {
                     </TD>
                     <TD>
                       {d.profile_complete
-                        ? <Pill tone="success">complete</Pill>
+                        ? <Pill tone="success" dot>Complete</Pill>
                         : (
                           <button
                             onClick={() => sendProfileLink(d.id)}
