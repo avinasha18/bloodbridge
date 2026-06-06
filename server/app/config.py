@@ -11,6 +11,19 @@ from typing import List, Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Always allowed — merged with any CORS_ORIGINS from env (env cannot remove these).
+DEFAULT_CORS_ORIGINS: tuple[str, ...] = (
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:3000",
+    "https://main.d11rkj49kcvbsu.amplifyapp.com",
+)
+
+# Production frontend + API path prefix (always /api in code — local Vite proxy strips it).
+DEFAULT_API_PREFIX = "/api"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -78,7 +91,10 @@ class Settings(BaseSettings):
     admin_frontend_url: str = "http://localhost:5173"
     donor_portal_url: str = "http://localhost:5174"
 
-    cors_origins: str = "http://localhost:5173,http://localhost:5174,http://localhost:3000"
+    cors_origins: str = ""  # optional extra origins (DEFAULT_CORS_ORIGINS always included)
+
+    # All routes also served under /api (local Vite proxy strips prefix before uvicorn).
+    api_prefix: str = DEFAULT_API_PREFIX
 
     # Coordinator sends SMS manually (no auto-blast on create). Top-N per click.
     manual_outreach: bool = True
@@ -96,7 +112,16 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> List[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        seen: set[str] = set()
+        merged: List[str] = []
+        for origin in (
+            *DEFAULT_CORS_ORIGINS,
+            *(o.strip() for o in self.cors_origins.split(",") if o.strip()),
+        ):
+            if origin not in seen:
+                seen.add(origin)
+                merged.append(origin)
+        return merged
 
 
 @lru_cache

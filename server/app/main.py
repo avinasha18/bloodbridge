@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
@@ -46,23 +46,7 @@ app.add_middleware(
 )
 
 
-@app.on_event("startup")
-def _startup() -> None:
-    init_db()
-    from app.services.reliability_model import get_reliability_scorer
-
-    scorer = get_reliability_scorer()
-    if scorer.is_loaded:
-        logging.getLogger(__name__).info("Donor reliability model loaded")
-    else:
-        logging.getLogger(__name__).warning(
-            "Donor reliability model not found — run "
-            "python scripts/train_reliability_model.py or POST /jobs/reliability/train-and-sync"
-        )
-
-
-@app.get("/health", response_model=Health, tags=["meta"])
-def health() -> Health:
+def _health_payload() -> Health:
     from app.services.sms_diagnostics import get_sms_diagnostics
 
     sms = get_sms_diagnostics()
@@ -80,14 +64,48 @@ def health() -> Health:
     )
 
 
-app.include_router(donors.router)
-app.include_router(patients.router)
-app.include_router(requests.router)
-app.include_router(outreach.router)
-app.include_router(analytics.router)
-app.include_router(ai.router)
-app.include_router(protocols.router)
-app.include_router(jobs.router)
-app.include_router(coordinator.router)
-app.include_router(donor_self.router)
-app.include_router(public.router)
+@app.on_event("startup")
+def _startup() -> None:
+    log = logging.getLogger(__name__)
+    log.info("CORS allow_origins: %s", settings.cors_origins_list)
+    log.info("API prefix: %s", settings.api_prefix or "(none)")
+    init_db()
+    from app.services.reliability_model import get_reliability_scorer
+
+    scorer = get_reliability_scorer()
+    if scorer.is_loaded:
+        logging.getLogger(__name__).info("Donor reliability model loaded")
+    else:
+        logging.getLogger(__name__).warning(
+            "Donor reliability model not found — run "
+            "python scripts/train_reliability_model.py or POST /jobs/reliability/train-and-sync"
+        )
+
+
+# ALB/load-balancer probe (no /api prefix)
+@app.get("/health", response_model=Health, tags=["meta"])
+def health_root() -> Health:
+    return _health_payload()
+
+
+api = APIRouter(prefix=settings.api_prefix or "")
+
+api.include_router(donors.router)
+api.include_router(patients.router)
+api.include_router(requests.router)
+api.include_router(outreach.router)
+api.include_router(analytics.router)
+api.include_router(ai.router)
+api.include_router(protocols.router)
+api.include_router(jobs.router)
+api.include_router(coordinator.router)
+api.include_router(donor_self.router)
+api.include_router(public.router)
+
+
+@api.get("/health", response_model=Health, tags=["meta"])
+def health_api() -> Health:
+    return _health_payload()
+
+
+app.include_router(api)
