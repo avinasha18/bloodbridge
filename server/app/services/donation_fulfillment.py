@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from app.db.models import BloodRequest, Donor, OutreachLog
 from app.services.geo import haversine_km
 from app.services.matcher import COMPATIBLE_DONORS
+from app.services.nearby_hospitals import DonationSite, resolve_donation_site
 from app.services.patient_notify import notify_location_shared
 from app.services.sms_sender import render_location_sms
 from app.services.sms_timeline import record_followup_sms
@@ -98,19 +99,25 @@ def suggested_visit_datetime(req: BloodRequest) -> Tuple[datetime, str]:
 
 
 def _build_location_body(
-    hospital_name: str,
-    lat: float,
-    lon: float,
+    site: DonationSite,
     when: str,
     *,
     blood_group: Optional[str] = None,
 ) -> str:
-    core = render_location_sms(hospital_name, lat, lon, when)
+    core = render_location_sms(site.display_name, site.lat, site.lon, when)
     headline = "✅ You're confirmed to donate!"
     if blood_group:
         headline += f" ({blood_group})"
+    extra = ""
+    if site.used_fallback and site.patient_hospital:
+        extra = (
+            f"\nPatient need at: {site.patient_hospital}\n"
+            "Nearest collection point for your visit:\n"
+        )
+    elif site.used_fallback:
+        extra = "\nNearest blood collection center for your visit:\n"
     return (
-        f"{headline}\n\n"
+        f"{headline}{extra}\n"
         f"{core}\n\n"
         "Please reach 15 min early with a valid photo ID. "
         "Reply CANCEL if you can't make it."
@@ -120,21 +127,18 @@ def _build_location_body(
 def send_location_whatsapp(
     *,
     phone: str,
-    hospital_name: str,
-    hospital_lat: float,
-    hospital_lon: float,
+    site: DonationSite,
     when: str,
     blood_group: Optional[str] = None,
 ) -> Dict:
-    body = _build_location_body(
-        hospital_name, hospital_lat, hospital_lon, when, blood_group=blood_group
-    )
+    body = _build_location_body(site, when, blood_group=blood_group)
     result = send_whatsapp(phone, body, kind="donation_location")
     return {
         "message_id": result.message_id,
         "body": body,
         "delivery_phone": result.to_phone,
         "redirected": result.redirected,
+        "status": result.status,
     }
 
 
@@ -143,27 +147,27 @@ def _send_location_for_request(
     donor: Donor,
     req: BloodRequest,
 ) -> Dict:
-    """Send location WhatsApp + audit log. Caller handles commit."""
-    if req.hospital_lat is None or req.hospital_lon is None:
-        return {"location_sent": False, "reason": "missing_coordinates"}
-
-    visit_dt, when_str = suggested_visit_datetime(req)
-    maps_url = (
-        f"https://www.google.com/maps/search/?api=1"
-        f"&query={req.hospital_lat},{req.hospital_lon}"
-    )
-
+    """Send location WhatsApp + audit log. Uses nearby fallback if request has no pin."""
     if not donor.phone:
         return {"location_sent": False, "reason": "no_phone"}
 
+    site = resolve_donation_site(db, donor, req)
+    visit_dt, when_str = suggested_visit_datetime(req)
+
     wa = send_location_whatsapp(
         phone=donor.phone,
-        hospital_name=req.hospital_name or "Blood donation center",
-        hospital_lat=float(req.hospital_lat),
-        hospital_lon=float(req.hospital_lon),
+        site=site,
         when=when_str,
         blood_group=req.blood_group,
     )
+    if wa.get("status") == "failed" or not wa.get("message_id"):
+        return {
+            "location_sent": False,
+            "reason": "whatsapp_failed",
+            "request_id": req.id,
+            "hospital_name": site.display_name,
+        }
+
     record_followup_sms(
         db,
         request_id=req.id,
@@ -178,11 +182,13 @@ def _send_location_for_request(
     return {
         "location_sent": True,
         "request_id": req.id,
-        "hospital_name": req.hospital_name,
+        "hospital_name": site.display_name,
         "when": when_str,
         "scheduled_for": visit_dt.isoformat(),
-        "maps_url": maps_url,
+        "maps_url": site.maps_url,
         "message_id": wa.get("message_id"),
+        "location_source": site.source,
+        "used_fallback": site.used_fallback,
     }
 
 
@@ -252,18 +258,15 @@ def auto_fulfill_confirmation(
 
     if req.location_sent_at:
         visit_dt, when_str = suggested_visit_datetime(req)
-        maps_url = (
-            f"https://www.google.com/maps/search/?api=1"
-            f"&query={req.hospital_lat},{req.hospital_lon}"
-        )
+        site = resolve_donation_site(db, donor, req)
         outcome.update(
             {
                 "fulfilled": True,
                 "location_sent": False,
                 "request_id": req.id,
-                "hospital_name": req.hospital_name,
+                "hospital_name": site.display_name,
                 "when": when_str,
-                "maps_url": maps_url,
+                "maps_url": site.maps_url,
                 "reason": "already_sent",
             }
         )

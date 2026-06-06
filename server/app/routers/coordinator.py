@@ -22,6 +22,7 @@ from app.db import get_db
 from app.db.models import BloodRequest, Donor
 from app.services import reservation
 from app.services.outreach_delivery import admin_resend_outreach
+from app.services.nearby_hospitals import resolve_donation_site
 from app.services.patient_notify import notify_location_shared
 from app.services.sms_sender import send_location_sms
 from app.services.sms_timeline import record_followup_sms
@@ -90,14 +91,13 @@ def send_location(
     donor = db.query(Donor).get(req.assigned_donor_id)
     if not donor or not donor.phone:
         raise HTTPException(status_code=400, detail="Assigned donor has no phone")
-    if req.hospital_lat is None or req.hospital_lon is None:
-        raise HTTPException(status_code=400, detail="Hospital coordinates missing")
 
+    site = resolve_donation_site(db, donor, req)
     sms = send_location_sms(
         phone=donor.phone,
-        hospital_name=req.hospital_name or "the hospital",
-        hospital_lat=float(req.hospital_lat),
-        hospital_lon=float(req.hospital_lon),
+        hospital_name=site.display_name,
+        hospital_lat=site.lat,
+        hospital_lon=site.lon,
         when=payload.when,
     )
     record_followup_sms(

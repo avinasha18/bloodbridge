@@ -768,6 +768,7 @@ def _build_donor_dashboard(db: Session, donor: Donor) -> DonorDashboard:
     from datetime import date, datetime as _dt
 
     from app.services.donation_fulfillment import suggested_visit_datetime
+    from app.services.nearby_hospitals import resolve_donation_site
 
     logs = (
         db.query(OutreachLog)
@@ -797,18 +798,15 @@ def _build_donor_dashboard(db: Session, donor: Donor) -> DonorDashboard:
             initial = parts[0] + ((" " + parts[-1][:1] + ".") if len(parts) > 1 else "")
         scheduled_for = None
         maps_url = None
-        if req.hospital_lat is not None and req.hospital_lon is not None:
-            maps_url = (
-                f"https://www.google.com/maps/search/?api=1"
-                f"&query={req.hospital_lat},{req.hospital_lon}"
-            )
+        site = resolve_donation_site(db, donor, req)
+        maps_url = site.maps_url
         if req.status in ("reserved", "confirmed") and req.location_sent_at:
             scheduled_for, _ = suggested_visit_datetime(req)
         history.append(
             DonorDonationEntry(
                 request_id=req.id,
                 blood_group=req.blood_group,
-                hospital_name=req.hospital_name,
+                hospital_name=site.display_name if site.used_fallback else req.hospital_name,
                 donated_at=req.fulfilled_at,
                 reserved_at=req.reserved_at,
                 scheduled_for=scheduled_for,
@@ -839,18 +837,15 @@ def _build_donor_dashboard(db: Session, donor: Donor) -> DonorDashboard:
         initial = _patient_initial(patient)
         scheduled_for = None
         maps_url = None
-        if req.hospital_lat is not None and req.hospital_lon is not None:
-            maps_url = (
-                f"https://www.google.com/maps/search/?api=1"
-                f"&query={req.hospital_lat},{req.hospital_lon}"
-            )
+        site = resolve_donation_site(db, donor, req)
+        maps_url = site.maps_url
         if req.status in ("reserved", "confirmed") and req.location_sent_at:
             scheduled_for, _ = suggested_visit_datetime(req)
         history.append(
             DonorDonationEntry(
                 request_id=req.id,
                 blood_group=req.blood_group,
-                hospital_name=req.hospital_name,
+                hospital_name=site.display_name if site.used_fallback else req.hospital_name,
                 donated_at=req.fulfilled_at,
                 reserved_at=req.reserved_at,
                 scheduled_for=scheduled_for,
