@@ -106,6 +106,28 @@ class Settings(BaseSettings):
     # Phones assigned to seeded demo donors (shown in UI diagnostics)
     demo_donor_phones: str = "+917386223111,+918247364827"
 
+    # ── Twilio WhatsApp (Donor Engagement Agent) ──
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    # Sender number: +14155238886 = Twilio sandbox; or your approved number.
+    twilio_whatsapp_from: str = ""
+    # Set false to send live WhatsApp; default true (logs to outbox/whatsapp_log.jsonl).
+    twilio_use_mocks: Optional[bool] = None
+
+    @property
+    def twilio_mocks_enabled(self) -> bool:
+        if self.twilio_use_mocks is not None:
+            return self.twilio_use_mocks
+        if self.twilio_account_sid and self.twilio_auth_token and self.twilio_whatsapp_from:
+            return False
+        return True
+
+    # Cadence guards for the engagement agent (do not spam donors)
+    engagement_min_gap_days_new: int = 7
+    engagement_min_gap_days_active: int = 30
+    engagement_min_gap_days_at_risk: int = 14
+    engagement_min_gap_days_dormant: int = 30
+
     @property
     def demo_donor_phones_list(self) -> list[str]:
         return [p.strip() for p in self.demo_donor_phones.split(",") if p.strip()]

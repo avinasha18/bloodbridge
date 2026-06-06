@@ -702,6 +702,9 @@ class DonorDonationEntry(BaseModel):
     hospital_name: Optional[str]
     donated_at: Optional[datetime]
     reserved_at: Optional[datetime]
+    scheduled_for: Optional[datetime] = None
+    maps_url: Optional[str] = None
+    location_shared: bool = False
     assignment_role: Optional[str]
     patient_initial: Optional[str]
     status: str
@@ -764,12 +767,14 @@ def donor_dashboard_by_id(donor_id: str, db: Session = Depends(get_db)):
 def _build_donor_dashboard(db: Session, donor: Donor) -> DonorDashboard:
     from datetime import date, datetime as _dt
 
+    from app.services.donation_fulfillment import suggested_visit_datetime
+
     logs = (
         db.query(OutreachLog)
         .filter(OutreachLog.donor_id == donor.id)
         .filter(
             (OutreachLog.response == "accept")
-            | (OutreachLog.message_kind == "self_volunteer")
+            | (OutreachLog.message_kind.in_(["self_volunteer", "engagement_confirm"]))
             | OutreachLog.assignment_role.in_(
                 ["assigned", "standby", "donated", "released", "no_show"]
             )
@@ -778,16 +783,27 @@ def _build_donor_dashboard(db: Session, donor: Donor) -> DonorDashboard:
         .limit(50)
         .all()
     )
+    seen_requests: set[str] = set()
     history: List[DonorDonationEntry] = []
     for log in logs:
         req = db.query(BloodRequest).get(log.request_id)
-        if not req:
+        if not req or req.id in seen_requests:
             continue
+        seen_requests.add(req.id)
         patient = db.query(Patient).get(req.patient_id) if req.patient_id else None
         initial = None
         if patient and patient.name:
             parts = patient.name.strip().split()
             initial = parts[0] + ((" " + parts[-1][:1] + ".") if len(parts) > 1 else "")
+        scheduled_for = None
+        maps_url = None
+        if req.hospital_lat is not None and req.hospital_lon is not None:
+            maps_url = (
+                f"https://www.google.com/maps/search/?api=1"
+                f"&query={req.hospital_lat},{req.hospital_lon}"
+            )
+        if req.status in ("reserved", "confirmed") and req.location_sent_at:
+            scheduled_for, _ = suggested_visit_datetime(req)
         history.append(
             DonorDonationEntry(
                 request_id=req.id,
@@ -795,11 +811,61 @@ def _build_donor_dashboard(db: Session, donor: Donor) -> DonorDashboard:
                 hospital_name=req.hospital_name,
                 donated_at=req.fulfilled_at,
                 reserved_at=req.reserved_at,
+                scheduled_for=scheduled_for,
+                maps_url=maps_url,
+                location_shared=bool(req.location_sent_at),
                 assignment_role=log.assignment_role,
                 patient_initial=initial,
                 status=req.status,
             )
         )
+
+    # Assigned requests that may not have an outreach log yet
+    assigned_rows = (
+        db.query(BloodRequest)
+        .filter(
+            BloodRequest.assigned_donor_id == donor.id,
+            BloodRequest.status.in_(["reserved", "confirmed", "fulfilled"]),
+        )
+        .order_by(BloodRequest.reserved_at.desc())
+        .limit(20)
+        .all()
+    )
+    for req in assigned_rows:
+        if req.id in seen_requests:
+            continue
+        seen_requests.add(req.id)
+        patient = db.query(Patient).get(req.patient_id) if req.patient_id else None
+        initial = _patient_initial(patient)
+        scheduled_for = None
+        maps_url = None
+        if req.hospital_lat is not None and req.hospital_lon is not None:
+            maps_url = (
+                f"https://www.google.com/maps/search/?api=1"
+                f"&query={req.hospital_lat},{req.hospital_lon}"
+            )
+        if req.status in ("reserved", "confirmed") and req.location_sent_at:
+            scheduled_for, _ = suggested_visit_datetime(req)
+        history.append(
+            DonorDonationEntry(
+                request_id=req.id,
+                blood_group=req.blood_group,
+                hospital_name=req.hospital_name,
+                donated_at=req.fulfilled_at,
+                reserved_at=req.reserved_at,
+                scheduled_for=scheduled_for,
+                maps_url=maps_url,
+                location_shared=bool(req.location_sent_at),
+                assignment_role="assigned",
+                patient_initial=initial,
+                status=req.status,
+            )
+        )
+
+    history.sort(
+        key=lambda h: h.scheduled_for or h.reserved_at or h.donated_at or _dt.min,
+        reverse=True,
+    )
 
     # Open compatible needs for this donor (reuse the landing logic)
     compat_groups = []

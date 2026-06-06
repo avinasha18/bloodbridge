@@ -314,6 +314,141 @@ Return JSON with keys: subject (string), body (string)."""
         }
 
 
+    # ---------- Donor engagement / retention agent ----------
+
+    def engagement_plan(
+        self,
+        *,
+        donor_name: str,
+        segment: str,
+        blood_group: Optional[str],
+        donations: int,
+        last_donation_iso: Optional[str],
+        days_since_last: Optional[int],
+        showup_rate: float,
+        eligible_now: bool,
+        city: Optional[str],
+        lang: str = "en",
+        native_headline: Optional[str] = None,
+    ) -> Dict[str, str]:
+        """Generate a personalized retention message + 1-line rationale.
+
+        Returns: {"message": str, "rationale": str}. Body is English only;
+        native_headline is prepended separately by the caller.
+        """
+        lang_name = {"en": "English", "te": "Telugu", "hi": "Hindi", "ta": "Tamil", "kn": "Kannada", "mr": "Marathi"}.get(lang, "English")
+        last = last_donation_iso or "never recorded"
+        elig = "eligible to donate now" if eligible_now else "not eligible yet"
+        headline_note = (
+            f"A separate {lang_name} headline is already shown above the message: "
+            f'"{native_headline}". Write the BODY in English only — do not repeat the headline.'
+            if native_headline
+            else "Write in English."
+        )
+        prompt = f"""You are the Donor Engagement Agent for the Blood Warriors Foundation in India.
+Write ONE WhatsApp message BODY to retain this donor.
+
+Donor: {donor_name or 'friend'}
+Segment: {segment}  (new | active | at_risk | dormant)
+Blood group: {blood_group or 'unknown'}
+Past donations: {donations}
+Last donation: {last} ({days_since_last if days_since_last is not None else '?'} days ago)
+Show-up rate: {round(showup_rate * 100)}%
+Eligibility: {elig}
+City: {city or 'India'}
+Local language: {lang_name}
+
+Rules:
+- Max 280 characters for the English body (headline is separate)
+- Warm, specific, gratitude-first; NO guilt, NO emojis spam (max 1 emoji)
+- {headline_note}
+- 'new'      → welcome + what to expect on first donation
+- 'active'   → thank them, mention their impact (3 lives per donation), small ask
+- 'at_risk'  → low pressure check-in, acknowledge over-contact, give them control
+- 'dormant'  → reactivation, no guilt, mention they are eligible if true
+- End with a clear next step (Reply YES to help today, or STOP to pause)
+
+Return ONLY a JSON object with keys "message" and "rationale" (one short sentence
+explaining why this message fits this donor). No prose outside JSON."""
+
+        text = self._invoke_claude(prompt, max_tokens=320)
+        if text:
+            try:
+                match = re.search(r"\{.*\}", text, re.S)
+                if match:
+                    parsed = json.loads(match.group(0))
+                    msg = (parsed.get("message") or "").strip()
+                    if msg:
+                        return {
+                            "message": msg[:600],
+                            "rationale": (parsed.get("rationale") or "").strip()[:400],
+                        }
+            except json.JSONDecodeError:
+                pass
+            # Fallback: if Bedrock returned plain text, use that as message
+            if text.strip():
+                return {"message": text.strip()[:600], "rationale": f"Generated for {segment} donor."}
+
+        return _engagement_template(
+            donor_name=donor_name,
+            segment=segment,
+            blood_group=blood_group,
+            donations=donations,
+            days_since_last=days_since_last,
+            eligible_now=eligible_now,
+            lang=lang,
+        )
+
+
+def _engagement_template(
+    *,
+    donor_name: str,
+    segment: str,
+    blood_group: Optional[str],
+    donations: int,
+    days_since_last: Optional[int],
+    eligible_now: bool,
+    lang: str,
+) -> Dict[str, str]:
+    name = donor_name or "friend"
+    bg = blood_group or "your blood group"
+    if segment == "new":
+        msg = (
+            f"Hi {name}, welcome to Blood Warriors. Thank you for registering "
+            f"as a {bg} donor. On your first donation we screen you, take "
+            "~350ml in 10 min — you'll save up to 3 lives. Reply YES when you're ready."
+        )
+        rationale = "Welcome flow: explains the first-donation experience."
+    elif segment == "active":
+        impact = donations * 3 if donations else 3
+        msg = (
+            f"Thank you, {name}! Your {donations} donations have helped about "
+            f"{impact} patients this year. Another {bg} request may come this month — "
+            "reply YES if you're ready to help again, or STOP to pause."
+        )
+        rationale = "Active donor: gratitude + impact + soft re-engagement."
+    elif segment == "at_risk":
+        msg = (
+            f"Hi {name}, we've been reaching out a lot — sorry for that. Your "
+            f"reliability is valued. Reply PAUSE for a 60-day break, MAYBE if you "
+            "want fewer asks, or YES when you're ready to donate again."
+        )
+        rationale = "At-risk: acknowledge over-contact, give the donor control."
+    else:  # dormant
+        eligibility = (
+            "You're eligible to donate again. "
+            if eligible_now
+            else "You'll be eligible again soon. "
+        )
+        ago = f"{days_since_last} days" if days_since_last else "a while"
+        msg = (
+            f"Hi {name}, it's been {ago} since your last donation. {eligibility}"
+            "No pressure — just a friendly note. Reply YES to help a patient near you today."
+        )
+        rationale = "Dormant: low-pressure reactivation."
+    return {"message": msg[:600], "rationale": rationale}
+
+
 _singleton: Optional[BedrockClient] = None
 
 

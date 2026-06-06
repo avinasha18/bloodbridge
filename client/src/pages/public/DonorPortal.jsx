@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Hospital,
   BarChart2,
+  MapPin,
 } from "lucide-react";
 import {
   BarChart,
@@ -219,6 +220,45 @@ function DonorDashboard({ phone }) {
         </section>
       )}
 
+      {d.donation_history.some(
+        (h) => h.location_shared && h.status === "reserved",
+      ) && (
+        <section className="card p-5 border-emerald-200 bg-emerald-50/40 animate-fade-up">
+          <h2 className="font-semibold text-emerald-900 mb-3 flex items-center gap-2">
+            <Calendar className="w-4 h-4" /> Upcoming donation visit
+          </h2>
+          {d.donation_history
+            .filter((h) => h.location_shared && h.status === "reserved")
+            .slice(0, 1)
+            .map((h) => (
+              <div key={h.request_id} className="space-y-2">
+                <div className="text-sm text-emerald-900">
+                  <strong>{h.blood_group}</strong> at {h.hospital_name || "hospital"}
+                </div>
+                {h.scheduled_for && (
+                  <div className="text-sm text-emerald-800 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    {formatDateTime(h.scheduled_for)}
+                  </div>
+                )}
+                {h.maps_url && (
+                  <a
+                    href={h.maps_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 hover:underline"
+                  >
+                    <MapPin className="w-3.5 h-3.5" /> Open in Google Maps
+                  </a>
+                )}
+                <p className="text-xs text-emerald-700">
+                  Bring a valid photo ID. Reach 15 minutes early.
+                </p>
+              </div>
+            ))}
+        </section>
+      )}
+
       {d.donation_history.length > 0 && (
         <DonationByYear history={d.donation_history} />
       )}
@@ -345,8 +385,17 @@ function DonationByYear({ history }) {
 
 function DonationItem({ entry }) {
   const completed = entry.status === "fulfilled" || entry.assignment_role === "donated";
-  const Icon = completed ? CheckCircle2 : Clock;
-  const tone = completed ? "emerald" : "indigo";
+  const scheduled =
+    !completed &&
+    entry.location_shared &&
+    (entry.status === "reserved" || entry.status === "confirmed");
+  const Icon = completed ? CheckCircle2 : scheduled ? MapPin : Clock;
+  const tone = completed ? "emerald" : scheduled ? "emerald" : "indigo";
+  const label = completed
+    ? "Donated"
+    : scheduled
+      ? "Scheduled visit"
+      : "Accepted";
   return (
     <li className="relative">
       <span
@@ -358,7 +407,7 @@ function DonationItem({ entry }) {
         <div>
           <div className="font-medium text-ink-900 inline-flex items-center gap-1.5">
             <Icon className={`w-3.5 h-3.5 ${tone === "emerald" ? "text-emerald-600" : "text-indigo-600"}`} />
-            {completed ? "Donated" : "Accepted"} · {entry.blood_group}
+            {label} · {entry.blood_group}
           </div>
           <div className="text-xs text-ink-600 mt-0.5 flex items-center gap-1.5">
             <Hospital className="w-3 h-3" /> {entry.hospital_name || "—"}
@@ -366,13 +415,25 @@ function DonationItem({ entry }) {
           {entry.patient_initial && (
             <div className="text-xs text-ink-500 mt-0.5">For: {entry.patient_initial}</div>
           )}
+          {scheduled && entry.maps_url && (
+            <a
+              href={entry.maps_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-emerald-700 hover:underline mt-1 inline-flex items-center gap-1"
+            >
+              <MapPin className="w-3 h-3" /> Maps
+            </a>
+          )}
         </div>
         <div className="text-xs text-ink-500 text-right">
           {entry.donated_at
             ? formatDate(entry.donated_at)
-            : entry.reserved_at
-              ? `Reserved ${relativeTime(entry.reserved_at)}`
-              : "—"}
+            : entry.scheduled_for
+              ? formatDateTime(entry.scheduled_for)
+              : entry.reserved_at
+                ? `Reserved ${relativeTime(entry.reserved_at)}`
+                : "—"}
         </div>
       </div>
     </li>

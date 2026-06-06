@@ -323,6 +323,33 @@ class ResponseToken(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class DonorEngagementLog(Base):
+    """Engagement Agent: classification + AI-generated outreach per donor.
+
+    One row per (donor, send). Cadence guard reads MAX(sent_at) to avoid spam.
+    """
+
+    __tablename__ = "donor_engagement_logs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    donor_id: Mapped[str] = mapped_column(String(36), ForeignKey("donors.id"), index=True)
+    # 'new' | 'active' | 'at_risk' | 'dormant'
+    segment: Mapped[str] = mapped_column(String(20), index=True)
+    # 'whatsapp' | 'sms' | 'preview'
+    channel: Mapped[str] = mapped_column(String(20), default="whatsapp")
+    subject: Mapped[Optional[str]] = mapped_column(String(255))
+    message: Mapped[str] = mapped_column(Text)
+    # AI-generated rationale shown to coordinator
+    rationale: Mapped[Optional[str]] = mapped_column(Text)
+    # Twilio MessageSid (or sns-* etc.)
+    message_id: Mapped[Optional[str]] = mapped_column(String(255))
+    # delivered | queued | preview | failed
+    status: Mapped[str] = mapped_column(String(20), default="queued", index=True)
+    delivery_error: Mapped[Optional[str]] = mapped_column(Text)
+    generated_by: Mapped[str] = mapped_column(String(40), default="bedrock")
+    sent_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+
 class DonorSelfServiceToken(Base):
     """Public, no-auth tokens for two flows:
       - 'complete_profile': donor missing fields fills them in

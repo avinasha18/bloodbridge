@@ -9,6 +9,7 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
+  Sparkles,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { endpoints } from "../../lib/api";
@@ -20,6 +21,7 @@ const NAV = [
   { to: "/requests", label: "Blood Needs", icon: Droplets },
   { to: "/donors", label: "Donors", icon: Users },
   { to: "/patients", label: "Patients", icon: Heart },
+  { to: "/engagement", label: "Engagement", icon: Sparkles },
   { to: "/analytics", label: "Reports", icon: BarChart3 },
 ];
 

@@ -137,4 +137,23 @@ export const endpoints = {
   // Public AI assistant (patient or donor portal chat widget)
   publicAiAsk: (payload) =>
     api.post(`/public/ai/ask`, payload).then((r) => r.data),
+
+  // Donor Engagement & Retention Agent (Bedrock + Twilio WhatsApp)
+  engagementSummary: () =>
+    api.get(`/donor-engagement/summary`).then((r) => r.data),
+  engagementPlan: (donor_id) =>
+    api.get(`/donor-engagement/donors/${donor_id}/plan`).then((r) => r.data),
+  engagementSend: (donor_id, payload = {}) =>
+    api.post(`/donor-engagement/donors/${donor_id}/send`, payload).then((r) => r.data),
+  engagementHistory: (donor_id, limit = 20) =>
+    api.get(`/donor-engagement/donors/${donor_id}/history`, { params: { limit } })
+      .then((r) => r.data),
+  engagementRun: (payload) =>
+    api.post(`/donor-engagement/run`, payload).then((r) => r.data),
+  engagementPrepareSamples: () =>
+    api.post(`/donor-engagement/prepare-samples`).then((r) => r.data),
+  engagementSampleProfiles: () =>
+    api.get(`/donor-engagement/sample-profiles`).then((r) => r.data),
+  engagementRecent: (limit = 15, params = {}) =>
+    api.get(`/donor-engagement/recent`, { params: { limit, ...params } }).then((r) => r.data),
 };

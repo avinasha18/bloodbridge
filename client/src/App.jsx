@@ -13,6 +13,8 @@ import Patients from "./pages/Patients";
 import Analytics from "./pages/Analytics";
 import AI from "./pages/AI";
 import Protocols from "./pages/Protocols";
+import EngagementAgent from "./pages/EngagementAgent";
+import EngagementMessages from "./pages/EngagementMessages";
 import DonateLanding from "./pages/public/DonateLanding";
 import PatientRegister from "./pages/public/PatientRegister";
 import PatientPortal from "./pages/public/PatientPortal";
@@ -50,6 +52,8 @@ export default function App() {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/ai" element={<AI />} />
         <Route path="/protocols" element={<Protocols />} />
+        <Route path="/engagement" element={<EngagementAgent />} />
+        <Route path="/engagement/messages" element={<EngagementMessages />} />
       </Route>
 
       <Route index element={<Navigate to="/donate" replace />} />

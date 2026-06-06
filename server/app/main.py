@@ -15,6 +15,7 @@ from app.routers import (
     ai,
     analytics,
     coordinator,
+    donor_engagement,
     donor_self,
     donors,
     jobs,
@@ -24,6 +25,7 @@ from app.routers import (
     public,
     requests,
 )
+from app.routers.donor_engagement import twilio_webhook
 from app.schemas.common import Health
 
 logging.basicConfig(
@@ -103,6 +105,7 @@ api.include_router(protocols.router)
 api.include_router(jobs.router)
 api.include_router(coordinator.router)
 api.include_router(donor_self.router)
+api.include_router(donor_engagement.router)
 api.include_router(public.router)
 
 
@@ -112,6 +115,14 @@ def health_api() -> Health:
 
 
 app.include_router(api)
+
+# Twilio WhatsApp inbound (sandbox "When a message comes in" URL)
+app.add_api_route(
+    "/twilio/whatsapp/webhook",
+    twilio_webhook,
+    methods=["POST"],
+    tags=["donor-engagement"],
+)
 
 # SMS YES/NO tap links — also at root for carrier compatibility (API routes live under /api)
 app.add_api_route(
