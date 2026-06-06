@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Droplets,
@@ -9,9 +9,11 @@ import {
   Sliders,
   Activity,
   ExternalLink,
+  LogOut,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { endpoints } from "../../lib/api";
+import { coordinatorUser, signOutCoordinator } from "../../lib/auth";
 
 const NAV = [
   { to: "/dashboard", label: "Home", icon: LayoutDashboard },
@@ -25,11 +27,18 @@ const NAV = [
 
 export default function AppLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [health, setHealth] = useState(null);
+  const user = coordinatorUser();
 
   useEffect(() => {
     endpoints.health().then(setHealth).catch(() => setHealth(null));
   }, []);
+
+  const handleLogout = () => {
+    signOutCoordinator();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <div className="min-h-full flex bg-ink-50">
@@ -114,20 +123,37 @@ export default function AppLayout() {
           </div>
         </div>
 
-        <div className="border-t border-ink-200 p-3 text-xs text-ink-500 space-y-1">
-          <div className="flex items-center gap-2">
-            <Activity className="w-3 h-3 text-emerald-500" />
-            <span>
-              {health ? "Connected" : "Not connected"}
-              {health?.sns_using_mocks ? " · test SMS" : health ? " · real SMS" : ""}
-            </span>
-          </div>
-          {health && !health.sns_using_mocks && health.response_base_url && (
-            <div className="truncate" title={health.response_base_url}>
-              YES/NO: {health.response_base_url.replace("/respond", "")}
+        <div className="border-t border-ink-200 p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-blood-50 text-blood-700 flex items-center justify-center text-xs font-semibold">
+                {user?.[0]?.toUpperCase() || "C"}
+              </div>
+              <div className="text-xs leading-tight min-w-0">
+                <div className="font-medium text-ink-900 truncate">
+                  {user || "Coordinator"}
+                </div>
+                <div className="text-ink-500 truncate">signed in</div>
+              </div>
             </div>
-          )}
-          <div>v{health?.version || "—"} · {health?.environment || "—"}</div>
+            <button
+              onClick={handleLogout}
+              title="Sign out"
+              className="text-ink-400 hover:text-blood-700 p-1 rounded hover:bg-blood-50"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="border-t border-ink-100 pt-2 text-[11px] text-ink-500 space-y-0.5">
+            <div className="flex items-center gap-2">
+              <Activity className="w-3 h-3 text-emerald-500" />
+              <span>
+                {health ? "Connected" : "Not connected"}
+                {health?.sns_using_mocks ? " · test SMS" : health ? " · real SMS" : ""}
+              </span>
+            </div>
+            <div>v{health?.version || "—"} · {health?.environment || "—"}</div>
+          </div>
         </div>
       </aside>
 

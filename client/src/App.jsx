@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout";
 import PublicLayout from "./components/layout/PublicLayout";
+import RequireCoordinator from "./components/RequireCoordinator";
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Requests from "./pages/Requests";
 import RequestDetail from "./pages/RequestDetail";
@@ -24,14 +26,21 @@ export default function App() {
       <Route element={<PublicLayout />}>
         <Route path="/donate" element={<DonateLanding />} />
         <Route path="/patient-register" element={<PatientRegister />} />
-        <Route path="/track" element={<TrackRequest />} />
         <Route path="/track/:id" element={<TrackRequest />} />
         <Route path="/me" element={<PatientPortal />} />
         <Route path="/donor" element={<DonorPortal />} />
       </Route>
 
-      {/* Coordinator portal */}
-      <Route element={<AppLayout />}>
+      <Route path="/login" element={<Login />} />
+
+      {/* Coordinator portal (gated) */}
+      <Route
+        element={
+          <RequireCoordinator>
+            <AppLayout />
+          </RequireCoordinator>
+        }
+      >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/requests" element={<Requests />} />
         <Route path="/requests/new" element={<NewRequest />} />
@@ -45,6 +54,8 @@ export default function App() {
       </Route>
 
       <Route index element={<Navigate to="/donate" replace />} />
+      {/* legacy alias for SMS tracking links */}
+      <Route path="/track" element={<Navigate to="/me" replace />} />
       <Route path="*" element={<Navigate to="/donate" replace />} />
     </Routes>
   );

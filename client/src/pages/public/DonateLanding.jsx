@@ -35,7 +35,7 @@ export default function DonateLanding() {
 
   return (
     <div>
-      <section className="rounded-2xl bg-hero-blood text-white px-6 py-10 sm:px-10 sm:py-14 mb-8 shadow-card animate-fade-up relative overflow-hidden">
+      <section className="rounded-2xl bg-hero-blood text-white px-6 py-8 sm:px-10 sm:py-12 mb-6 shadow-card animate-fade-up relative overflow-hidden">
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-white/10 rounded-full blur-3xl" />
         <div className="relative z-10 max-w-3xl">
@@ -45,12 +45,13 @@ export default function DonateLanding() {
           <h1 className="text-3xl sm:text-4xl font-semibold leading-tight">
             {t("donate_hero_title")}
           </h1>
-          <p className="mt-3 text-white/90 max-w-2xl">
-            {t("donate_hero_subtitle")}
-          </p>
+          <p className="mt-3 text-white/90 max-w-2xl">{t("donate_hero_subtitle")}</p>
           <div className="mt-5 flex flex-wrap gap-3 text-sm">
             <div className="bg-white/15 px-3 py-1.5 rounded-lg animate-pop-in">
-              {needs.length} {needs.length === 1 ? t("donate_open_needs_one") : t("donate_open_needs_many")}
+              {needs.length}{" "}
+              {needs.length === 1
+                ? t("donate_open_needs_one")
+                : t("donate_open_needs_many")}
             </div>
             {urgent > 0 && (
               <div className="bg-white/15 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 animate-pop-in">
@@ -60,6 +61,11 @@ export default function DonateLanding() {
           </div>
         </div>
       </section>
+
+      <SectionHeader
+        title="Open blood needs"
+        subtitle="Tap a card to volunteer. We'll text the hospital details to your phone."
+      />
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <span className="text-sm text-ink-600 mr-1">Filter:</span>
@@ -122,15 +128,31 @@ export default function DonateLanding() {
         </div>
       )}
 
-      <div className="mt-10 card p-5 sm:p-6 bg-white hover-lift">
-        <h3 className="font-semibold text-ink-800">{t("donate_patient_block_title")}</h3>
-        <p className="text-sm text-ink-500 mt-1 mb-3">{t("donate_patient_block_subtitle")}</p>
-        <button
-          className="btn-primary"
-          onClick={() => navigate("/patient-register")}
-        >
-          {t("donate_register_cta")}
-        </button>
+      <div className="mt-10 grid sm:grid-cols-2 gap-4">
+        <div className="card p-5 sm:p-6 bg-white hover-lift">
+          <h3 className="font-semibold text-ink-800">{t("donate_patient_block_title")}</h3>
+          <p className="text-sm text-ink-500 mt-1 mb-3">
+            {t("donate_patient_block_subtitle")}
+          </p>
+          <button
+            className="btn-primary"
+            onClick={() => navigate("/patient-register")}
+          >
+            {t("donate_register_cta")}
+          </button>
+        </div>
+        <div className="card p-5 sm:p-6 bg-white hover-lift">
+          <h3 className="font-semibold text-ink-800">Already donated before?</h3>
+          <p className="text-sm text-ink-500 mt-1 mb-3">
+            See your donation history, eligibility, and badges in the donor portal.
+          </p>
+          <button
+            className="btn-secondary"
+            onClick={() => navigate("/donor")}
+          >
+            <Heart className="w-4 h-4" /> Open my donor dashboard
+          </button>
+        </div>
       </div>
 
       {activeNeed && (
@@ -144,6 +166,15 @@ export default function DonateLanding() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function SectionHeader({ title, subtitle }) {
+  return (
+    <div className="mb-4">
+      <h2 className="text-lg font-semibold text-ink-900">{title}</h2>
+      {subtitle && <p className="text-sm text-ink-500 mt-0.5">{subtitle}</p>}
     </div>
   );
 }
