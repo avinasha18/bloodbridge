@@ -16,6 +16,8 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from urllib.parse import quote
+
 from app.config import settings
 from app.db.models import BloodRequest, Donor, Patient, PatientNotification
 from app.services.i18n import detect_language, render as i18n_render
@@ -27,9 +29,18 @@ logger = logging.getLogger(__name__)
 # ─── Public link helper (track page URL) ────────────────────────────────
 
 
+def _patient_portal_link(request: BloodRequest, patient: Optional[Patient] = None) -> str:
+    """Public patient dashboard URL (replaces legacy /track links in SMS)."""
+    base = settings.admin_frontend_url.rstrip("/")
+    if patient and patient.phone:
+        return f"{base}/me?phone={quote(patient.phone)}"
+    return f"{base}/me"
+
+
 def _track_link(request_id: str) -> str:
-    base = settings.response_base_url.split("/respond")[0]
-    return f"{base}/track/{request_id}"
+    # Legacy name — now points at patient dashboard when possible.
+    del request_id
+    return f"{settings.admin_frontend_url.rstrip('/')}/me"
 
 
 def _patient_lang(patient: Patient, request: BloodRequest) -> str:
@@ -127,7 +138,7 @@ def _patient_render(kind: str, patient: Patient, request: BloodRequest, **kwargs
     base_kwargs = {
         "blood_group": request.blood_group,
         "hospital": _hospital_short(request),
-        "link": _track_link(request.id),
+        "link": _patient_portal_link(request, patient),
     }
     base_kwargs.update(kwargs)
     return i18n_render(kind, lang, **base_kwargs)

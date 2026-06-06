@@ -27,7 +27,7 @@ export default function Donors() {
   });
   const [offset, setOffset] = useState(0);
   const limit = 25;
-  const [modal, setModal] = useState(null); // 'add' | 'invite' | null
+  const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -83,53 +83,50 @@ export default function Donors() {
 
       {toast && (
         <div
-          className={`text-sm px-3 py-2 rounded-lg border ${
+          className={`text-sm px-4 py-3 rounded-xl border animate-scale-in ${
             toast.kind === "ok"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-              : "bg-blood-50 border-blood-200 text-blood-800"
+              ? "bg-emerald-50 border-emerald-200/80 text-emerald-800"
+              : "bg-blood-50 border-blood-200/80 text-blood-800"
           }`}
         >
           {toast.text}
         </div>
       )}
 
-      {/* Profile-incomplete callout */}
       {(incomplete.data?.length || 0) > 0 && (
         <Section
           title={`${incomplete.data.length} donors with incomplete profiles`}
           subtitle="Missing blood group or location. SMS them a one-tap link to fill it in."
         >
-          <ul className="divide-y divide-ink-100">
+          <ul className="divide-y divide-ink-100/80">
             {incomplete.data.slice(0, 8).map((d) => (
-              <li key={d.id} className="flex items-center justify-between py-2 text-sm">
-                <div>
-                  <Link to={`/donors/${d.id}`} className="font-medium hover:underline">
+              <li key={d.id} className="flex items-center justify-between py-3 text-sm">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Link to={`/donors/${d.id}`} className="font-medium hover:text-blood-600 transition-colors truncate">
                     {d.name || d.id.slice(0, 8)}
                   </Link>
-                  <span className="ml-3 text-xs text-ink-500 font-mono">{d.phone}</span>
-                  <span className="ml-3">
-                    {d.blood_group ? (
-                      <BloodGroupChip bloodGroup={d.blood_group} />
-                    ) : (
-                      <Pill tone="warn">no blood group</Pill>
-                    )}
-                  </span>
+                  <span className="text-xs text-ink-400 font-mono shrink-0">{d.phone}</span>
+                  {d.blood_group ? (
+                    <BloodGroupChip bloodGroup={d.blood_group} size="sm" />
+                  ) : (
+                    <Pill tone="warn">no blood group</Pill>
+                  )}
                   {(!d.latitude || !d.longitude) && (
-                    <span className="ml-2"><Pill tone="warn">no location</Pill></span>
+                    <Pill tone="warn">no location</Pill>
                   )}
                 </div>
                 <button
-                  className="text-xs inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blood-600 text-white hover:bg-blood-700"
+                  className="text-xs inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blood-600 text-white hover:bg-blood-700 transition-colors shrink-0 ml-3"
                   onClick={() => sendProfileLink(d.id)}
                 >
                   <Send className="w-3 h-3" />
-                  Send Profile Link
+                  Send Link
                 </button>
               </li>
             ))}
             {incomplete.data.length > 8 && (
-              <li className="text-xs text-ink-500 py-2">
-                + {incomplete.data.length - 8} more — filter or page through to act on them
+              <li className="text-xs text-ink-400 py-3">
+                + {incomplete.data.length - 8} more
               </li>
             )}
           </ul>
@@ -137,13 +134,13 @@ export default function Donors() {
       )}
 
       <Section title="Filters" noPadding>
-        <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-3 bg-ink-50/30">
+        <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-3 bg-ink-50/40">
           <div>
-            <label className="text-xs font-medium text-ink-600">Search</label>
-            <div className="relative mt-1">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-ink-400" />
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">Search</label>
+            <div className="relative mt-1.5">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" />
               <input
-                className="input pl-9"
+                className="input pl-10"
                 placeholder="name or phone"
                 value={filters.search}
                 onChange={(e) => {
@@ -203,10 +200,10 @@ export default function Donors() {
                 {data?.items?.map((d) => (
                   <TR key={d.id}>
                     <TD>
-                      <Link to={`/donors/${d.id}`} className="hover:underline font-medium">
+                      <Link to={`/donors/${d.id}`} className="hover:text-blood-600 font-medium transition-colors">
                         {d.name || d.id.slice(0, 8)}
                       </Link>
-                      <div className="text-xs text-ink-500">{d.city || "—"} · {d.role || d.donor_type || ""}</div>
+                      <div className="text-[11px] text-ink-400 font-normal mt-0.5">{d.city || "—"} · {d.role || d.donor_type || ""}</div>
                     </TD>
                     <TD>
                       {d.blood_group
@@ -219,9 +216,9 @@ export default function Donors() {
                     <TD><MiniBar value={Number(d.overall_score) || 0} tone="amber" /></TD>
                     <TD>
                       <div className="flex flex-col">
-                        <span>{d.donations_till_date}</span>
+                        <span className="tabular-nums">{d.donations_till_date}</span>
                         {d.calls_to_donations_ratio != null && d.calls_to_donations_ratio > 3 && (
-                          <span className="text-xs text-blood-700 inline-flex items-center gap-1">
+                          <span className="text-[10px] text-blood-600 inline-flex items-center gap-1 mt-0.5">
                             <AlertTriangle className="w-3 h-3" />
                             over-contacted
                           </span>
@@ -234,7 +231,7 @@ export default function Donors() {
                         : (
                           <button
                             onClick={() => sendProfileLink(d.id)}
-                            className="inline-flex items-center gap-1 text-xs text-blood-700 hover:underline"
+                            className="inline-flex items-center gap-1 text-[11px] text-blood-600 hover:text-blood-700 transition-colors"
                             title="Send profile-completion SMS link"
                           >
                             <ShieldAlert className="w-3 h-3" />
@@ -254,7 +251,7 @@ export default function Donors() {
               </tbody>
             </Table>
 
-            <div className="flex justify-between items-center pt-4 text-sm">
+            <div className="flex justify-between items-center px-5 py-4 border-t border-ink-100/80 text-sm">
               <span className="text-ink-500">
                 Showing {offset + 1}–{offset + (data?.items?.length || 0)} of {data?.total}
               </span>
@@ -304,10 +301,10 @@ function MiniBar({ value = 0, tone = "blood" }) {
     tone === "emerald" ? "bg-emerald-500" : tone === "amber" ? "bg-amber-500" : "bg-blood-500";
   return (
     <div className="flex items-center gap-2">
-      <div className="w-16 h-1.5 bg-ink-200 rounded overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: `${value * 100}%` }} />
+      <div className="w-16 h-1.5 bg-ink-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${value * 100}%` }} />
       </div>
-      <span className="text-xs font-mono">{value.toFixed(2)}</span>
+      <span className="text-[11px] font-mono text-ink-600 tabular-nums">{value.toFixed(2)}</span>
     </div>
   );
 }
@@ -315,9 +312,9 @@ function MiniBar({ value = 0, tone = "blood" }) {
 function Select({ label, value, options, onChange }) {
   return (
     <label className="block">
-      <span className="text-xs font-medium text-ink-600">{label}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">{label}</span>
       <select
-        className="input mt-1"
+        className="input mt-1.5"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -332,11 +329,11 @@ function Select({ label, value, options, onChange }) {
 
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <button onClick={onClose} className="text-ink-500 hover:text-ink-900">
+    <div className="fixed inset-0 bg-ink-900/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-panel max-w-md w-full p-6 animate-scale-in">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-ink-900">{title}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-ink-400 hover:text-ink-700 hover:bg-ink-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -386,14 +383,14 @@ function AddDonorModal({ onClose, onSaved }) {
   }
 
   return (
-    <Modal title="Add donor (admin)" onClose={onClose}>
-      <form onSubmit={submit} className="space-y-3 text-sm">
+    <Modal title="Add donor" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-3.5 text-sm">
         <Field label="Full name" required value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
         <Field label="Mobile number" required value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+91…" />
         <label className="block">
           <span className="text-xs font-medium text-ink-600">Blood Group</span>
           <select
-            className="input mt-1"
+            className="input mt-1.5"
             value={form.blood_group}
             onChange={(e) => setForm({ ...form, blood_group: e.target.value })}
           >
@@ -401,21 +398,21 @@ function AddDonorModal({ onClose, onSaved }) {
           </select>
         </label>
         <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2.5">
           <Field label="Latitude" value={form.latitude} onChange={(v) => setForm({ ...form, latitude: v })} placeholder="17.4204" />
           <Field label="Longitude" value={form.longitude} onChange={(v) => setForm({ ...form, longitude: v })} placeholder="78.4490" />
         </div>
         <label className="block">
           <span className="text-xs font-medium text-ink-600">Gender</span>
-          <select className="input mt-1" value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}>
+          <select className="input mt-1.5" value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}>
             <option value="">Prefer not to say</option>
             <option>Male</option>
             <option>Female</option>
             <option>Other</option>
           </select>
         </label>
-        {err && <div className="text-xs text-blood-700">{err}</div>}
-        <div className="flex justify-end gap-2 pt-1">
+        {err && <div className="text-xs text-blood-600 bg-blood-50 rounded-lg px-3 py-2">{err}</div>}
+        <div className="flex justify-end gap-2.5 pt-2">
           <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn-primary" disabled={busy}>
             {busy ? <Spinner /> : "Save donor"}
@@ -449,14 +446,14 @@ function SelfRegisterModal({ onClose, onDone }) {
   return (
     <Modal title="Generate self-register invite" onClose={onClose}>
       {!result ? (
-        <form onSubmit={submit} className="space-y-3 text-sm">
-          <p className="text-ink-600 text-xs">
+        <form onSubmit={submit} className="space-y-3.5 text-sm">
+          <p className="text-ink-500 text-xs leading-relaxed">
             Generates a tokenised registration link. If you provide a phone number we'll
             SMS the link immediately; otherwise you can copy/paste it.
           </p>
           <Field label="Phone (optional)" value={phone} onChange={setPhone} placeholder="+91…" />
-          {err && <div className="text-xs text-blood-700">{err}</div>}
-          <div className="flex justify-end gap-2 pt-1">
+          {err && <div className="text-xs text-blood-600 bg-blood-50 rounded-lg px-3 py-2">{err}</div>}
+          <div className="flex justify-end gap-2.5 pt-2">
             <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={busy}>
               {busy ? <Spinner /> : "Generate"}
@@ -464,13 +461,13 @@ function SelfRegisterModal({ onClose, onDone }) {
           </div>
         </form>
       ) : (
-        <div className="space-y-3 text-sm">
-          <p className="text-emerald-700">
+        <div className="space-y-3.5 text-sm">
+          <p className="text-emerald-700 font-medium">
             {result.sent_to_phone
               ? `Sent to ${result.sent_to_phone}.`
               : "Link generated. Copy and share it:"}
           </p>
-          <div className="bg-ink-50 border border-ink-200 rounded-lg p-2 break-all font-mono text-xs">
+          <div className="bg-ink-50 border border-ink-200/80 rounded-xl p-3 break-all font-mono text-xs">
             {result.link}
           </div>
           <button
@@ -493,7 +490,7 @@ function Field({ label, value, onChange, required, placeholder }) {
     <label className="block">
       <span className="text-xs font-medium text-ink-600">{label}{required && " *"}</span>
       <input
-        className="input mt-1"
+        className="input mt-1.5"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}

@@ -1,22 +1,35 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { HandHeart, MapPin, Clock, AlertTriangle, Droplet, Heart } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  HandHeart,
+  MapPin,
+  Clock,
+  AlertTriangle,
+  Droplet,
+  Heart,
+  Sparkles,
+  MessageSquare,
+  ShieldCheck,
+  ArrowRight,
+  Users,
+  ChevronRight,
+} from "lucide-react";
 import { endpoints } from "../../lib/api";
 import { usePoll } from "../../hooks/useAsync";
 import { useLanguage } from "../../lib/i18n";
-import {
-  BLOOD_GROUPS,
-  URGENCY_LABELS,
-  relativeTime,
-} from "../../lib/format";
-import Spinner from "../../components/ui/Spinner";
+import { BLOOD_GROUPS, relativeTime } from "../../lib/format";
+import { BloodGroupChip, UrgencyBadge } from "../../components/ui/Badge";
 import VolunteerModal from "./VolunteerModal";
 
-const URGENCY_BADGE = {
-  critical: "bg-blood-600 text-white",
-  urgent: "bg-orange-500 text-white",
-  routine: "bg-ink-200 text-ink-700",
-};
+const STEPS = [
+  { icon: HandHeart, key: "donate_step1", color: "bg-blood-50 text-blood-600" },
+  { icon: MessageSquare, key: "donate_step2", color: "bg-indigo-50 text-indigo-600" },
+  { icon: ShieldCheck, key: "donate_step3", color: "bg-emerald-50 text-emerald-600" },
+];
+
+function shortBg(bg) {
+  return bg.replace("Positive", "+").replace("Negative", "−");
+}
 
 export default function DonateLanding() {
   const [bgFilter, setBgFilter] = useState("");
@@ -34,127 +47,160 @@ export default function DonateLanding() {
   const urgent = needs.filter((n) => n.urgency !== "routine").length;
 
   return (
-    <div>
-      <section className="rounded-2xl bg-hero-blood text-white px-6 py-8 sm:px-10 sm:py-12 mb-6 shadow-card animate-fade-up relative overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-white/10 rounded-full blur-3xl" />
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur px-3 py-1 rounded-full text-xs font-medium mb-4">
-            <Heart className="w-3.5 h-3.5 animate-heartbeat" /> {t("donate_hero_pill")}
+    <div className="space-y-10">
+      {/* Hero section */}
+      <section>
+        <div className="text-center max-w-xl mx-auto pt-2 pb-6">
+          <div className="inline-flex items-center gap-2 bg-blood-50 text-blood-700 px-3 py-1.5 rounded-full text-xs font-semibold mb-4">
+            <Heart className="w-3 h-3" />
+            {t("donate_hero_pill")}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-semibold leading-tight">
+          <h1 className="text-3xl sm:text-4xl font-bold text-ink-900 leading-tight tracking-tight">
             {t("donate_hero_title")}
           </h1>
-          <p className="mt-3 text-white/90 max-w-2xl">{t("donate_hero_subtitle")}</p>
-          <div className="mt-5 flex flex-wrap gap-3 text-sm">
-            <div className="bg-white/15 px-3 py-1.5 rounded-lg animate-pop-in">
-              {needs.length}{" "}
-              {needs.length === 1
-                ? t("donate_open_needs_one")
-                : t("donate_open_needs_many")}
+          <p className="mt-3 text-base text-ink-500 leading-relaxed max-w-md mx-auto">
+            {t("donate_hero_subtitle")}
+          </p>
+
+          {/* Live stats */}
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <div className="flex items-center gap-2 bg-white border border-ink-200 rounded-xl px-4 py-2.5 shadow-xs">
+              <Droplet className="w-4 h-4 text-blood-500" />
+              <span className="text-sm font-semibold text-ink-800">
+                {needs.length}
+              </span>
+              <span className="text-sm text-ink-500">
+                {needs.length === 1 ? t("donate_open_needs_one") : t("donate_open_needs_many")}
+              </span>
             </div>
             {urgent > 0 && (
-              <div className="bg-white/15 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 animate-pop-in">
-                <AlertTriangle className="w-3.5 h-3.5" /> {urgent} {t("donate_urgent")}
+              <div className="flex items-center gap-2 bg-blood-50 border border-blood-100 rounded-xl px-4 py-2.5">
+                <AlertTriangle className="w-4 h-4 text-blood-600" />
+                <span className="text-sm font-semibold text-blood-700">
+                  {urgent} {t("donate_urgent")}
+                </span>
               </div>
             )}
           </div>
         </div>
+
+        {/* How it works — horizontal steps */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {STEPS.map(({ icon: Icon, key, color }, i) => (
+            <div
+              key={key}
+              className="flex items-start gap-3 bg-white border border-ink-100 rounded-xl p-4"
+            >
+              <div className={`w-9 h-9 rounded-lg ${color} flex items-center justify-center shrink-0`}>
+                <Icon className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">
+                  {t("donate_step_label")} {i + 1}
+                </div>
+                <p className="text-sm text-ink-700 mt-0.5 leading-snug">
+                  {t(key)}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
 
-      <SectionHeader
-        title="Open blood needs"
-        subtitle="Tap a card to volunteer. We'll text the hospital details to your phone."
-      />
+      {/* Open needs section */}
+      <section>
+        <div className="flex items-end justify-between gap-4 mb-5">
+          <div>
+            <h2 className="text-xl font-semibold text-ink-900">{t("donate_needs_title")}</h2>
+            <p className="text-sm text-ink-500 mt-1">{t("donate_needs_subtitle")}</p>
+          </div>
+          {needs.length > 0 && (
+            <span className="text-xs text-ink-400 shrink-0 hidden sm:block">
+              Updated live
+            </span>
+          )}
+        </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span className="text-sm text-ink-600 mr-1">Filter:</span>
-        <button
-          onClick={() => setBgFilter("")}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-            bgFilter === ""
-              ? "bg-blood-600 text-white border-blood-600 shadow"
-              : "bg-white border-ink-200 text-ink-700 hover:border-ink-300"
-          }`}
-        >
-          {t("donate_filter_all")}
-        </button>
-        {BLOOD_GROUPS.map((bg) => (
-          <button
-            key={bg}
-            onClick={() => setBgFilter(bg)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-              bgFilter === bg
-                ? "bg-blood-600 text-white border-blood-600 shadow"
-                : "bg-white border-ink-200 text-ink-700 hover:border-ink-300"
-            }`}
-          >
-            {bg}
-          </button>
-        ))}
-      </div>
-
-      {loading && !data ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="card p-5 h-44">
-              <div className="shimmer h-6 w-24 rounded mb-3" />
-              <div className="shimmer h-4 w-40 rounded mb-2" />
-              <div className="shimmer h-4 w-32 rounded" />
-            </div>
+        {/* Blood group filter */}
+        <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1 -mx-1 px-1">
+          <span className="text-[11px] font-medium text-ink-400 uppercase tracking-wider shrink-0 mr-1">
+            {t("donate_filter_label")}
+          </span>
+          <FilterChip active={bgFilter === ""} onClick={() => setBgFilter("")}>
+            {t("donate_filter_all")}
+          </FilterChip>
+          {BLOOD_GROUPS.map((bg) => (
+            <FilterChip key={bg} active={bgFilter === bg} onClick={() => setBgFilter(bg)}>
+              {shortBg(bg)}
+            </FilterChip>
           ))}
         </div>
-      ) : error ? (
-        <div className="card p-6 text-blood-700">
-          Could not load open needs. Please try again in a moment.
-        </div>
-      ) : needs.length === 0 ? (
-        <div className="card p-10 text-center animate-fade-up">
-          <Droplet className="w-10 h-10 mx-auto text-ink-300 mb-3" />
-          <h3 className="font-semibold text-ink-800">{t("donate_no_needs_title")}</h3>
-          <p className="text-sm text-ink-500 mt-1">{t("donate_no_needs_subtitle")}</p>
-        </div>
-      ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {needs.map((n, i) => (
-            <div
-              key={n.request_id}
-              className="animate-fade-up"
-              style={{ animationDelay: `${i * 50}ms` }}
-            >
-              <NeedCard need={n} onVolunteer={() => setActiveNeed(n)} ctaLabel={t("donate_card_cta")} />
-            </div>
-          ))}
-        </div>
-      )}
 
-      <div className="mt-10 grid sm:grid-cols-2 gap-4">
-        <div className="card p-5 sm:p-6 bg-white hover-lift">
-          <h3 className="font-semibold text-ink-800">{t("donate_patient_block_title")}</h3>
-          <p className="text-sm text-ink-500 mt-1 mb-3">
-            {t("donate_patient_block_subtitle")}
-          </p>
-          <button
-            className="btn-primary"
+        {/* Need cards */}
+        {loading && !data ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white border border-ink-100 rounded-xl p-5 space-y-3">
+                <div className="shimmer h-6 w-12 rounded" />
+                <div className="shimmer h-4 w-3/4 rounded" />
+                <div className="shimmer h-4 w-1/2 rounded" />
+                <div className="shimmer h-10 w-full rounded-lg mt-3" />
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="bg-blood-50 border border-blood-100 rounded-xl px-5 py-6 text-center">
+            <p className="text-sm text-blood-700">{t("donate_load_error")}</p>
+          </div>
+        ) : needs.length === 0 ? (
+          <EmptyState t={t} />
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {needs.map((n) => (
+              <NeedCard
+                key={n.request_id}
+                need={n}
+                onVolunteer={() => setActiveNeed(n)}
+                ctaLabel={t("donate_card_cta")}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Bottom CTAs */}
+      <section className="space-y-3">
+        <div className="grid sm:grid-cols-2 gap-3">
+          <ActionCard
+            icon={Heart}
+            iconBg="bg-emerald-50 text-emerald-600"
+            title={t("donate_patient_block_title")}
+            description={t("donate_patient_block_subtitle")}
+            cta={t("donate_register_cta")}
             onClick={() => navigate("/patient-register")}
-          >
-            {t("donate_register_cta")}
-          </button>
-        </div>
-        <div className="card p-5 sm:p-6 bg-white hover-lift">
-          <h3 className="font-semibold text-ink-800">Already donated before?</h3>
-          <p className="text-sm text-ink-500 mt-1 mb-3">
-            See your donation history, eligibility, and badges in the donor portal.
-          </p>
-          <button
-            className="btn-secondary"
+          />
+          <ActionCard
+            icon={Sparkles}
+            iconBg="bg-indigo-50 text-indigo-600"
+            title={t("donate_donor_block_title")}
+            description={t("donate_donor_block_subtitle")}
+            cta={t("donate_donor_block_cta")}
             onClick={() => navigate("/donor")}
-          >
-            <Heart className="w-4 h-4" /> Open my donor dashboard
-          </button>
+          />
         </div>
-      </div>
 
+        <div className="text-center pt-2">
+          <Link
+            to="/me"
+            className="inline-flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-700 transition-colors"
+          >
+            <Users className="w-3.5 h-3.5" />
+            {t("donate_track_link")}
+          </Link>
+        </div>
+      </section>
+
+      {/* Volunteer modal */}
       {activeNeed && (
         <VolunteerModal
           need={activeNeed}
@@ -162,7 +208,12 @@ export default function DonateLanding() {
           onSuccess={(result) => {
             setActiveNeed(null);
             refresh(true);
-            if (result?.request_id) navigate(`/track/${result.request_id}`);
+            const phone = result?.donor_phone || result?.phone;
+            if (phone) {
+              navigate(`/donor?phone=${encodeURIComponent(phone)}`);
+            } else {
+              navigate("/donor");
+            }
           }}
         />
       )}
@@ -170,58 +221,102 @@ export default function DonateLanding() {
   );
 }
 
-function SectionHeader({ title, subtitle }) {
+function EmptyState({ t }) {
   return (
-    <div className="mb-4">
-      <h2 className="text-lg font-semibold text-ink-900">{title}</h2>
-      {subtitle && <p className="text-sm text-ink-500 mt-0.5">{subtitle}</p>}
+    <div className="bg-white border border-ink-100 rounded-xl px-6 py-14 text-center">
+      <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto mb-4">
+        <Droplet className="w-6 h-6" />
+      </div>
+      <h3 className="text-base font-semibold text-ink-900">{t("donate_no_needs_title")}</h3>
+      <p className="text-sm text-ink-500 mt-1.5 max-w-xs mx-auto">{t("donate_no_needs_subtitle")}</p>
     </div>
   );
 }
 
-function NeedCard({ need, onVolunteer, ctaLabel = "I'll donate" }) {
-  const urgencyClass = URGENCY_BADGE[need.urgency] || URGENCY_BADGE.routine;
-  const isUrgent = need.urgency === "critical" || need.urgency === "urgent";
+function FilterChip({ active, onClick, children }) {
   return (
-    <div
-      id={need.request_id}
-      className={`card p-5 flex flex-col gap-3 hover-lift transition-all ${isUrgent ? "ring-1 ring-blood-100" : ""}`}
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 ${
+        active
+          ? "bg-ink-900 text-white border-ink-900"
+          : "bg-white border-ink-200 text-ink-600 hover:border-ink-300 hover:text-ink-800"
+      }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <div className="text-2xl font-semibold text-blood-700 leading-tight">{need.blood_group}</div>
-          <div className="text-xs text-ink-500 mt-0.5">{need.units_needed} unit{need.units_needed > 1 ? "s" : ""} needed</div>
-        </div>
-        <span className={`badge ${urgencyClass} ${need.urgency === "critical" ? "animate-pulse" : ""}`}>
-          {URGENCY_LABELS[need.urgency] || need.urgency}
-        </span>
-      </div>
+      {children}
+    </button>
+  );
+}
 
-      <div className="text-sm text-ink-700 space-y-1">
-        <div className="flex items-start gap-1.5">
-          <MapPin className="w-3.5 h-3.5 mt-0.5 text-ink-400 shrink-0" />
-          <span className="truncate">{need.hospital_name || "Hospital"}</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-ink-500 text-xs">
-          <Clock className="w-3 h-3" /> Requested {relativeTime(need.created_at)}
-        </div>
-        {need.patient_initial && (
-          <div className="text-xs text-ink-500">For: {need.patient_initial}</div>
-        )}
-      </div>
+function NeedCard({ need, onVolunteer, ctaLabel }) {
+  const isUrgent = need.urgency === "critical" || need.urgency === "urgent";
 
-      <div className="text-[11px] text-ink-500">
-        Compatible donors: {need.compatible_groups.slice(0, 4).join(", ")}
-        {need.compatible_groups.length > 4 && "…"}
-      </div>
+  return (
+    <article
+      id={need.request_id}
+      className={`bg-white border rounded-xl flex flex-col transition-all duration-200 hover:shadow-card-hover hover:border-ink-200 ${
+        isUrgent ? "border-blood-200 bg-blood-50/20" : "border-ink-100"
+      }`}
+    >
+      <div className="p-5 flex flex-col flex-1">
+        {/* Top row: blood group + urgency */}
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <BloodGroupChip bloodGroup={need.blood_group} size="lg" />
+          <UrgencyBadge urgency={need.urgency} compact />
+        </div>
 
-      <button
-        className="btn-primary mt-1 group"
-        onClick={onVolunteer}
-      >
-        <Heart className="w-4 h-4 group-hover:animate-heartbeat" />
-        {ctaLabel}
-      </button>
-    </div>
+        {/* Info */}
+        <div className="flex-1 space-y-2">
+          <div className="flex items-start gap-2 text-sm text-ink-700">
+            <MapPin className="w-3.5 h-3.5 mt-0.5 text-ink-400 shrink-0" />
+            <span className="line-clamp-2 leading-snug font-medium">{need.hospital_name || "Hospital"}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs text-ink-400">
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {relativeTime(need.created_at)}
+            </span>
+            <span>
+              {need.units_needed} unit{need.units_needed > 1 ? "s" : ""}
+            </span>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <button
+          type="button"
+          className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blood-600 text-white text-sm font-medium hover:bg-blood-700 active:scale-[0.98] transition-all duration-150"
+          onClick={onVolunteer}
+        >
+          <Heart className="w-4 h-4" />
+          {ctaLabel}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function ActionCard({ icon: Icon, iconBg, title, description, cta, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="bg-white border border-ink-100 rounded-xl p-5 text-left hover:border-ink-200 hover:shadow-card-hover transition-all duration-200 group w-full"
+    >
+      <div className="flex items-start gap-4">
+        <div className={`w-10 h-10 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-ink-900 text-[15px] leading-snug">{title}</h3>
+          <p className="text-sm text-ink-500 mt-1 leading-relaxed">{description}</p>
+          <span className="inline-flex items-center gap-1 text-sm font-medium text-blood-600 mt-3 group-hover:gap-1.5 transition-all duration-200">
+            {cta}
+            <ChevronRight className="w-3.5 h-3.5" />
+          </span>
+        </div>
+      </div>
+    </button>
   );
 }

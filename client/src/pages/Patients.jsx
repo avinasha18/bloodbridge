@@ -61,7 +61,7 @@ export default function Patients() {
                   <TD muted className="max-w-[200px] truncate">{t.hospital_name}</TD>
                   <TD muted>
                     {formatDate(t.expected_next_transfusion_date)}
-                    <span className="ml-1 text-amber-700 font-medium">({t.days_until}d)</span>
+                    <span className={`ml-1.5 font-semibold tabular-nums ${t.days_until <= 2 ? "text-blood-600" : "text-amber-600"}`}>({t.days_until}d)</span>
                   </TD>
                   <TD>
                     {t.proactive_request_created ? (
@@ -78,9 +78,9 @@ export default function Patients() {
       </Section>
 
       <Section title="All patients" noPadding>
-        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 border-b border-ink-100 bg-ink-50/30">
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 border-b border-ink-100/80 bg-ink-50/40">
           <label className="block">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Search</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">Search</span>
             <input
               className="input mt-1.5"
               placeholder="Name or hospital"
@@ -89,7 +89,7 @@ export default function Patients() {
             />
           </label>
           <label className="block">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Blood group</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">Blood group</span>
             <select
               className="input mt-1.5"
               value={filters.blood_group}
@@ -125,7 +125,7 @@ export default function Patients() {
                     <TD primary>
                       {p.name}
                       {p.contact_name && p.contact_name !== p.name && (
-                        <div className="text-[11px] text-ink-500 font-normal mt-0.5">
+                        <div className="text-[11px] text-ink-400 font-normal mt-0.5">
                           via {p.contact_name}
                           {p.relation_to_patient ? ` · ${p.relation_to_patient}` : ""}
                         </div>
@@ -147,7 +147,7 @@ export default function Patients() {
                 ))}
               </tbody>
             </Table>
-            <div className="flex justify-between items-center px-4 py-3 border-t border-ink-100 text-sm bg-ink-50/30">
+            <div className="flex justify-between items-center px-5 py-4 border-t border-ink-100/80 text-sm">
               <span className="text-ink-500">
                 Showing {offset + 1}–{offset + (list.data?.items?.length || 0)} of {list.data?.total}
               </span>

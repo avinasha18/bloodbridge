@@ -15,7 +15,6 @@ import AI from "./pages/AI";
 import Protocols from "./pages/Protocols";
 import DonateLanding from "./pages/public/DonateLanding";
 import PatientRegister from "./pages/public/PatientRegister";
-import TrackRequest from "./pages/public/TrackRequest";
 import PatientPortal from "./pages/public/PatientPortal";
 import DonorPortal from "./pages/public/DonorPortal";
 
@@ -26,7 +25,7 @@ export default function App() {
       <Route element={<PublicLayout />}>
         <Route path="/donate" element={<DonateLanding />} />
         <Route path="/patient-register" element={<PatientRegister />} />
-        <Route path="/track/:id" element={<TrackRequest />} />
+        <Route path="/track/:id" element={<Navigate to="/me" replace />} />
         <Route path="/me" element={<PatientPortal />} />
         <Route path="/donor" element={<DonorPortal />} />
       </Route>

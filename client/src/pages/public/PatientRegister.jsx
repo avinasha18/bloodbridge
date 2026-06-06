@@ -89,21 +89,13 @@ export default function PatientRegister() {
         <div className="mt-6 space-y-2">
           <button
             className="btn-primary w-full"
-            onClick={() => navigate(`/track/${result.request_id}`)}
+            onClick={() => {
+              const phone = form.phone.trim();
+              navigate(phone ? `/me?phone=${encodeURIComponent(phone)}` : "/me");
+            }}
           >
-            Track this request
+            Open my patient dashboard
           </button>
-          <a
-            href={result.track_url}
-            className="btn-secondary w-full"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open tracking link
-          </a>
-        </div>
-        <div className="text-[11px] text-ink-500 mt-4 break-all">
-          {result.track_url}
         </div>
       </div>
     );

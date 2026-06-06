@@ -25,17 +25,11 @@ from app.db.models import (
     OutreachLog,
     Patient,
     PatientNotification,
-    ResponseToken,
 )
 from app.services.matcher import COMPATIBLE_DONORS
 from app.services.patient_notify import notify_request_created
 from app.services.reliability_service import refresh_donor_score
-from app.services.reservation import record_yes
-from app.services.sms_sender import (
-    generate_token,
-    send_outreach_sms,
-    token_expiry_hours,
-)
+from app.services.reservation import record_intentional_volunteer
 from app.services.step_functions_client import get_orchestrator
 
 logger = logging.getLogger(__name__)
@@ -79,6 +73,7 @@ class VolunteerResult(BaseModel):
     request_id: str
     donor_id: str
     donor_name: Optional[str]
+    donor_phone: Optional[str] = None
     standby_rank: Optional[int] = None
     detail: Optional[str] = None
 
@@ -227,15 +222,7 @@ def get_open_need(request_id: str, db: Session = Depends(get_db)):
 
 @router.post("/public/volunteer", response_model=VolunteerResult)
 def volunteer_for_request(payload: VolunteerSubmit, db: Session = Depends(get_db)):
-    """A donor publicly volunteers for one specific request.
-
-    Steps:
-      1. Validate request still open + blood group compatible.
-      2. Find-or-create donor by phone (auto-profile-complete).
-      3. Log a synthetic outreach (so it appears in the request timeline).
-      4. Mark response as 'accept' and route through `record_yes`
-         (first YES wins → assigned, otherwise standby).
-    """
+    """Web volunteer for one specific open need — direct assign when slot is open."""
     req = db.query(BloodRequest).get(payload.request_id)
     if not req:
         raise HTTPException(404, detail="Request not found")
@@ -307,70 +294,58 @@ def volunteer_for_request(payload: VolunteerSubmit, db: Session = Depends(get_db
         .first()
     )
     if not log:
-        # Send a confirmation/response SMS so we have a token + log row
-        token_str: Optional[str] = None
-        message_id: Optional[str] = None
-        if donor.phone:
-            try:
-                sms = send_outreach_sms(
-                    phone=donor.phone,
-                    blood_group=req.blood_group,
-                    hospital_name=req.hospital_name,
-                    urgency=req.urgency,
-                    units_needed=req.units_needed,
-                )
-                token_str = sms.token
-                message_id = sms.message_id
-            except Exception:
-                logger.exception("SMS to volunteer failed; continuing without token")
-
         log = OutreachLog(
             request_id=req.id,
             donor_id=donor.id,
-            channel="sms",
-            message_id=message_id,
+            channel="web",
             message_kind="self_volunteer",
             batch_number=0,
+            sent_at=datetime.utcnow(),
         )
         db.add(log)
         db.flush()
 
-        if token_str:
-            db.add(
-                ResponseToken(
-                    token=token_str,
-                    request_id=req.id,
-                    donor_id=donor.id,
-                    outreach_log_id=log.id,
-                    expires_at=token_expiry_hours(),
-                    purpose="outreach",
-                )
-            )
-
-    db.commit()
-
     if not payload.immediately_accept:
+        db.commit()
         return VolunteerResult(
             status="recorded",
             request_id=req.id,
             donor_id=donor.id,
             donor_name=donor.name,
+            donor_phone=donor.phone,
             detail="Saved. We'll reach out if we need you.",
         )
 
-    # Run through the normal first-YES-wins reservation flow
-    result = record_yes(db, log)
+    if log.assignment_role == "assigned" and req.assigned_donor_id == donor.id:
+        db.commit()
+        return VolunteerResult(
+            status="assigned",
+            request_id=req.id,
+            donor_id=donor.id,
+            donor_name=donor.name,
+            donor_phone=donor.phone,
+            detail="You are already the confirmed donor for this request.",
+        )
+
+    result = record_intentional_volunteer(db, log)
     db.commit()
+
+    if result.get("status") == "error":
+        raise HTTPException(409, detail=result.get("reason", "Could not assign"))
+
     return VolunteerResult(
         status=result.get("status", "recorded"),
         request_id=req.id,
         donor_id=donor.id,
         donor_name=donor.name,
+        donor_phone=donor.phone,
         standby_rank=result.get("standby_rank"),
         detail=(
-            "You are the confirmed donor. Hospital details will be sent to your phone."
+            "You are the confirmed donor. Open My Donations for details."
             if result.get("status") == "assigned"
-            else "Thank you. Someone else has been confirmed; you are on standby."
+            else "Thank you. Another donor is already confirmed; you are on standby."
+            if result.get("status") == "standby"
+            else "Saved."
         ),
     )
 
@@ -597,6 +572,20 @@ def _serialize_patient_request(db: Session, r: BloodRequest) -> PatientHistoryRe
         if d:
             donor_name = d.name
             donor_phone = d.phone
+    if not donor_name:
+        assigned_log = (
+            db.query(OutreachLog)
+            .filter(
+                OutreachLog.request_id == r.id,
+                OutreachLog.assignment_role == "assigned",
+            )
+            .first()
+        )
+        if assigned_log:
+            d = db.query(Donor).get(assigned_log.donor_id)
+            if d:
+                donor_name = d.name
+                donor_phone = d.phone
     return PatientHistoryRequest(
         request_id=r.id,
         blood_group=r.blood_group,
@@ -777,9 +766,13 @@ def _build_donor_dashboard(db: Session, donor: Donor) -> DonorDashboard:
 
     logs = (
         db.query(OutreachLog)
+        .filter(OutreachLog.donor_id == donor.id)
         .filter(
-            OutreachLog.donor_id == donor.id,
-            OutreachLog.assignment_role.in_(["assigned", "donated", "released", "no_show"]),
+            (OutreachLog.response == "accept")
+            | (OutreachLog.message_kind == "self_volunteer")
+            | OutreachLog.assignment_role.in_(
+                ["assigned", "standby", "donated", "released", "no_show"]
+            )
         )
         .order_by(OutreachLog.sent_at.desc())
         .limit(50)
@@ -1084,14 +1077,20 @@ def patient_self_register(
     # Kick off the orchestrator
     get_orchestrator().start_request_workflow(req.id)
 
-    # Build a public tracking URL
+    # Build a public patient dashboard URL
+    from urllib.parse import quote
+
     from app.config import settings as app_settings
 
-    base = app_settings.response_base_url.split("/respond")[0]
-    track_url = f"{base}/track/{req.id}"
+    phone_q = quote(patient.phone) if patient.phone else ""
+    dashboard_url = (
+        f"{app_settings.admin_frontend_url.rstrip('/')}/me?phone={phone_q}"
+        if phone_q
+        else f"{app_settings.admin_frontend_url.rstrip('/')}/me"
+    )
 
     return PatientRegisterResult(
         patient_id=patient.id,
         request_id=req.id,
-        track_url=track_url,
+        track_url=dashboard_url,
     )

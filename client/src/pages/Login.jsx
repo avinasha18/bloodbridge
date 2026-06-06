@@ -33,42 +33,42 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-ink-50 flex flex-col">
-      <header className="px-5 py-4 border-b border-ink-200 bg-white">
+    <div className="min-h-screen bg-[#f7f8fb] flex flex-col">
+      <header className="px-5 py-4 bg-white border-b border-ink-100 shadow-xs">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link to="/donate" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-blood-600 text-white flex items-center justify-center font-bold">
+          <Link to="/donate" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blood-600 to-blood-700 text-white flex items-center justify-center font-bold text-sm shadow-sm group-hover:shadow-glow-blood transition-shadow duration-300">
               B
             </div>
             <div>
               <div className="font-semibold text-ink-900 leading-tight">
                 Blood Warriors
               </div>
-              <div className="text-[11px] text-ink-500 leading-tight">
-                Coordinator portal sign-in
+              <div className="text-[11px] text-ink-400 leading-tight">
+                Coordinator portal
               </div>
             </div>
           </Link>
           <Link
             to="/donate"
-            className="text-xs text-ink-500 hover:text-ink-800 inline-flex items-center gap-1"
+            className="text-xs text-ink-500 hover:text-ink-800 inline-flex items-center gap-1.5 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to public site
           </Link>
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md">
-          <div className="card p-7 animate-fade-up">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-blood-50 text-blood-700 flex items-center justify-center">
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-[420px]">
+          <div className="card p-8 shadow-elevated animate-fade-up">
+            <div className="flex items-center gap-3.5 mb-6">
+              <div className="w-11 h-11 rounded-xl bg-blood-50 text-blood-600 flex items-center justify-center">
                 <LogIn className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-ink-900">Coordinator sign-in</h1>
-                <p className="text-xs text-ink-500">
-                  Internal access only · this portal manages live blood needs
+                <h1 className="text-lg font-semibold text-ink-900">Sign in</h1>
+                <p className="text-xs text-ink-500 mt-0.5">
+                  Internal access · manages live blood needs
                 </p>
               </div>
             </div>
@@ -79,7 +79,7 @@ export default function Login() {
                 icon={<User className="w-4 h-4" />}
                 input={
                   <input
-                    className="input pl-9"
+                    className="input pl-10"
                     autoComplete="username"
                     placeholder="wetwo"
                     value={username}
@@ -94,10 +94,10 @@ export default function Login() {
                 icon={<Lock className="w-4 h-4" />}
                 input={
                   <input
-                    className="input pl-9"
+                    className="input pl-10"
                     type="password"
                     autoComplete="current-password"
-                    placeholder="••••••"
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -106,7 +106,7 @@ export default function Login() {
               />
 
               {error && (
-                <div className="bg-blood-50 border border-blood-100 text-blood-800 text-sm rounded-lg px-3 py-2 flex items-center gap-2 animate-pop-in">
+                <div className="bg-blood-50 border border-blood-100 text-blood-700 text-sm rounded-xl px-3.5 py-2.5 flex items-center gap-2 animate-scale-in">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   {error}
                 </div>
@@ -114,28 +114,28 @@ export default function Login() {
 
               <button
                 type="submit"
-                className="btn-primary w-full"
+                className="btn-primary w-full !py-3"
                 disabled={loading}
               >
                 {loading ? "Signing in…" : "Sign in"}
               </button>
             </form>
 
-            <div className="mt-5 text-[11px] text-ink-500 border-t border-ink-100 pt-3">
-              Patients and donors don't need a password — sign in to your dashboard with your mobile number from the public site.
+            <div className="mt-6 text-[11px] text-ink-400 border-t border-ink-100 pt-4 leading-relaxed">
+              Patients and donors don't need a password — use your mobile number on the public site.
             </div>
           </div>
 
-          <div className="mt-4 text-center text-xs text-ink-500">
-            <Link to="/donate" className="hover:text-ink-800">
-              Browse open blood needs
-            </Link>{" "}
-            ·{" "}
-            <Link to="/me" className="hover:text-ink-800">
+          <div className="mt-5 text-center text-xs text-ink-500 flex items-center justify-center gap-2">
+            <Link to="/donate" className="hover:text-ink-800 transition-colors">
+              Open blood needs
+            </Link>
+            <span className="text-ink-300">·</span>
+            <Link to="/me" className="hover:text-ink-800 transition-colors">
               I'm a patient
-            </Link>{" "}
-            ·{" "}
-            <Link to="/donor" className="hover:text-ink-800">
+            </Link>
+            <span className="text-ink-300">·</span>
+            <Link to="/donor" className="hover:text-ink-800 transition-colors">
               I'm a donor
             </Link>
           </div>
@@ -148,9 +148,9 @@ export default function Login() {
 function Field({ label, icon, input }) {
   return (
     <label className="block">
-      <span className="text-xs font-medium text-ink-600">{label}</span>
-      <div className="relative mt-1">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400">
+      <span className="text-xs font-medium text-ink-600 mb-1.5 block">{label}</span>
+      <div className="relative">
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400">
           {icon}
         </span>
         {input}

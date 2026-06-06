@@ -4,6 +4,9 @@ import logging
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+
+from app.routers.outreach import handle_response
 
 from app import __version__
 from app.config import settings
@@ -109,3 +112,12 @@ def health_api() -> Health:
 
 
 app.include_router(api)
+
+# SMS YES/NO tap links — also at root for carrier compatibility (API routes live under /api)
+app.add_api_route(
+    "/respond",
+    handle_response,
+    methods=["GET"],
+    response_class=HTMLResponse,
+    tags=["outreach"],
+)

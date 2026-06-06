@@ -53,6 +53,132 @@ from app.services.sms_timeline import record_followup_sms
 logger = logging.getLogger(__name__)
 
 
+def _assign_primary_donor(
+    db: Session,
+    req: BloodRequest,
+    donor: Donor,
+    log: OutreachLog,
+    *,
+    notify: bool = True,
+) -> Dict:
+    """Mark donor as assigned and move request to reserved."""
+    log.assignment_role = "assigned"
+    log.standby_rank = 0
+    req.assigned_donor_id = donor.id
+    req.status = "reserved"
+    req.reserved_at = datetime.utcnow()
+    db.flush()
+
+    if notify and donor.phone:
+        from app.services.i18n import detect_language
+
+        donor_lang = detect_language(
+            latitude=float(donor.latitude) if donor.latitude is not None else None,
+            longitude=float(donor.longitude) if donor.longitude is not None else None,
+            city=donor.city,
+            explicit=donor.language_preference,
+        )
+        sms = send_assigned_confirmation(
+            phone=donor.phone,
+            blood_group=req.blood_group,
+            hospital_name=req.hospital_name,
+            lang=donor_lang,
+        )
+        record_followup_sms(
+            db,
+            request_id=req.id,
+            donor_id=donor.id,
+            message_kind="assigned_confirmation",
+            message_id=sms.message_id,
+        )
+        db.flush()
+
+    if notify:
+        try:
+            notify_donor_assigned(db, req, donor)
+            db.flush()
+        except Exception:
+            db.rollback()
+            logger.exception("notify_donor_assigned failed req=%s", req.id)
+
+    return {
+        "status": "assigned",
+        "request_id": req.id,
+        "donor_id": donor.id,
+    }
+
+
+def record_intentional_volunteer(db: Session, log: OutreachLog) -> Dict:
+    """Web 'I'll donate' — assign directly when open (priority over SMS queue).
+
+    Intentional volunteers skip reliability ranking. If another donor is
+    already assigned, this donor is placed on standby.
+    """
+    req = db.query(BloodRequest).get(log.request_id)
+    donor = db.query(Donor).get(log.donor_id)
+    if not req or not donor:
+        return {"status": "error", "reason": "not_found"}
+
+    if req.status in ("fulfilled", "failed"):
+        return {"status": "error", "reason": f"request_{req.status}"}
+
+    if log.assignment_role == "assigned" and req.assigned_donor_id == donor.id:
+        return {"status": "assigned", "request_id": req.id, "donor_id": donor.id}
+
+    log.response = "accept"
+    log.responded_at = datetime.utcnow()
+    if not log.message_kind:
+        log.message_kind = "self_volunteer"
+    donor.total_accepts = (donor.total_accepts or 0) + 1
+
+    existing_assigned = (
+        db.query(OutreachLog)
+        .filter(
+            OutreachLog.request_id == req.id,
+            OutreachLog.assignment_role == "assigned",
+            OutreachLog.donor_id != donor.id,
+        )
+        .first()
+    )
+
+    if existing_assigned is None:
+        return _assign_primary_donor(db, req, donor, log)
+
+    next_rank = _next_standby_rank(db, req.id)
+    log.assignment_role = "standby"
+    log.standby_rank = next_rank
+    db.commit()
+    if donor.phone:
+        from app.services.i18n import detect_language
+
+        donor_lang = detect_language(
+            latitude=float(donor.latitude) if donor.latitude is not None else None,
+            longitude=float(donor.longitude) if donor.longitude is not None else None,
+            city=donor.city,
+            explicit=donor.language_preference,
+        )
+        sms = send_standby_notice(
+            phone=donor.phone,
+            blood_group=req.blood_group,
+            hospital_name=req.hospital_name,
+            lang=donor_lang,
+        )
+        record_followup_sms(
+            db,
+            request_id=req.id,
+            donor_id=donor.id,
+            message_kind="standby_notice",
+            message_id=sms.message_id,
+        )
+        db.commit()
+    return {
+        "status": "standby",
+        "request_id": req.id,
+        "donor_id": donor.id,
+        "standby_rank": next_rank,
+    }
+
+
 def record_yes(db: Session, log: OutreachLog) -> Dict:
     """Process a YES from `log`. Returns event metadata."""
     req = db.query(BloodRequest).get(log.request_id)
@@ -75,47 +201,9 @@ def record_yes(db: Session, log: OutreachLog) -> Dict:
     )
 
     if existing_assigned is None:
-        # First YES wins
-        log.assignment_role = "assigned"
-        log.standby_rank = 0
-        req.assigned_donor_id = donor.id
-        req.status = "reserved"
-        req.reserved_at = datetime.utcnow()
+        result = _assign_primary_donor(db, req, donor, log)
         db.commit()
-        if donor.phone:
-            from app.services.i18n import detect_language
-
-            donor_lang = detect_language(
-                latitude=float(donor.latitude) if donor.latitude is not None else None,
-                longitude=float(donor.longitude) if donor.longitude is not None else None,
-                city=donor.city,
-                explicit=donor.language_preference,
-            )
-            sms = send_assigned_confirmation(
-                phone=donor.phone,
-                blood_group=req.blood_group,
-                hospital_name=req.hospital_name,
-                lang=donor_lang,
-            )
-            record_followup_sms(
-                db,
-                request_id=req.id,
-                donor_id=donor.id,
-                message_kind="assigned_confirmation",
-                message_id=sms.message_id,
-            )
-            db.commit()
-        # Automatically inform the patient who is donating
-        try:
-            notify_donor_assigned(db, req, donor)
-            db.commit()
-        except Exception:
-            db.rollback()
-        return {
-            "status": "assigned",
-            "request_id": req.id,
-            "donor_id": donor.id,
-        }
+        return result
 
     # Standby
     next_rank = _next_standby_rank(db, req.id)

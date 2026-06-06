@@ -2,8 +2,6 @@ import { Link } from "react-router-dom";
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
   AreaChart,
   Area,
   CartesianGrid,
@@ -69,7 +67,7 @@ export default function Analytics() {
     : 0;
 
   return (
-    <div className="space-y-5 animate-fade-up">
+    <div className="space-y-6 animate-fade-up">
       <PageHeader
         title="Reports & Analytics"
         subtitle="Operational metrics, donor supply, outreach performance, and failure trends."
@@ -77,7 +75,7 @@ export default function Analytics() {
       />
 
       {/* Summary KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
         <SummaryKpi
           label="Total donors"
           value={formatChartNumber(m?.total_donors)}
@@ -130,7 +128,7 @@ export default function Analytics() {
                 <XAxis dataKey="name" tick={axisTick} axisLine={false} tickLine={false} />
                 <YAxis tick={axisTick} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="eligible" name="Eligible donors" radius={[8, 8, 0, 0]} animationDuration={900}>
+                <Bar dataKey="eligible" name="Eligible donors" radius={[6, 6, 0, 0]} animationDuration={900}>
                   {supplyData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
                   ))}
@@ -189,13 +187,13 @@ export default function Analytics() {
         height="h-auto"
         noPadding
       >
-        <div className="px-5 py-4 border-b border-ink-100 flex flex-wrap items-center justify-around gap-4 bg-ink-50/40">
+        <div className="px-5 py-5 border-b border-ink-100/80 flex flex-wrap items-center justify-around gap-4 bg-ink-50/30">
           <StatRing value={trendTotals.sent} max={trendTotals.sent || 1} label="SMS sent" color={palette.slateLight} />
           <StatRing value={trendTotals.responded} max={trendTotals.sent || 1} label="Replied" color={palette.indigo} />
           <StatRing value={trendTotals.accepted} max={trendTotals.sent || 1} label="Accepted" color={palette.emerald} />
           <div className="text-center">
-            <div className="text-3xl font-bold text-emerald-700 tabular-nums">{acceptRate}%</div>
-            <div className="text-[10px] uppercase tracking-wide text-ink-500 mt-0.5">Accept rate</div>
+            <div className="text-3xl font-bold text-emerald-600 tabular-nums">{acceptRate}%</div>
+            <div className="text-[10px] uppercase tracking-wider text-ink-500 mt-1 font-medium">Accept rate</div>
           </div>
         </div>
         <div className="p-4 h-72">
@@ -211,7 +209,7 @@ export default function Analytics() {
                 <defs>
                   {Object.entries(LINE_SERIES).map(([key, cfg]) => (
                     <linearGradient key={key} id={`grad-${key}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={cfg.stroke} stopOpacity={0.25} />
+                      <stop offset="0%" stopColor={cfg.stroke} stopOpacity={0.2} />
                       <stop offset="100%" stopColor={cfg.stroke} stopOpacity={0} />
                     </linearGradient>
                   ))}
@@ -241,8 +239,10 @@ export default function Analytics() {
 
       {/* Failures table */}
       <section className="card overflow-hidden">
-        <header className="px-5 py-4 border-b border-ink-100 flex items-center gap-2 bg-gradient-to-r from-white to-rose-50/40">
-          <AlertCircle className="w-4 h-4 text-rose-600" />
+        <header className="px-5 py-4 border-b border-ink-100/80 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center">
+            <AlertCircle className="w-4 h-4 text-rose-600" />
+          </div>
           <div>
             <h2 className="text-sm font-semibold text-ink-900">Failure trends</h2>
             <p className="text-xs text-ink-500">Requests that could not be fulfilled · by blood group & city</p>
@@ -251,13 +251,13 @@ export default function Analytics() {
         {failures.loading ? (
           <Empty message="Loading failure data…" />
         ) : failures.data?.length === 0 ? (
-          <div className="py-12 text-center">
+          <div className="py-14 text-center">
             <CheckIcon />
-            <p className="text-sm text-emerald-700 font-medium mt-2">No failures recorded</p>
-            <p className="text-xs text-ink-500 mt-0.5">System performing well</p>
+            <p className="text-sm text-emerald-700 font-medium mt-3">No failures recorded</p>
+            <p className="text-xs text-ink-400 mt-0.5">System performing well</p>
           </div>
         ) : (
-          <Table className="border-0 rounded-none">
+          <Table>
             <THead>
               <tr>
                 <TH>Date</TH>
@@ -273,7 +273,7 @@ export default function Analytics() {
                   <TD primary>{f.blood_group}</TD>
                   <TD>{f.city || "—"}</TD>
                   <TD align="right">
-                    <span className={`font-mono font-semibold ${f.failure_count >= 3 ? "text-rose-700" : "text-ink-700"}`}>
+                    <span className={`font-mono font-semibold tabular-nums ${f.failure_count >= 3 ? "text-rose-600" : "text-ink-700"}`}>
                       {f.failure_count}
                     </span>
                   </TD>
@@ -285,7 +285,7 @@ export default function Analytics() {
       </section>
 
       <div className="text-center pb-4">
-        <Link to="/dashboard" className="text-xs text-indigo-600 hover:underline">
+        <Link to="/dashboard" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium transition-colors">
           ← Back to home dashboard
         </Link>
       </div>
@@ -294,25 +294,26 @@ export default function Analytics() {
 }
 
 function SummaryKpi({ label, value, sub, icon: Icon, color, loading }) {
-  const colors = {
-    blood: "from-rose-500 to-blood-600",
-    indigo: "from-indigo-500 to-violet-600",
-    emerald: "from-emerald-500 to-teal-600",
-    amber: "from-amber-500 to-orange-500",
+  const colorMap = {
+    blood: { bg: "bg-blood-50", text: "text-blood-600", accent: "bg-blood-500" },
+    indigo: { bg: "bg-indigo-50", text: "text-indigo-600", accent: "bg-indigo-500" },
+    emerald: { bg: "bg-emerald-50", text: "text-emerald-600", accent: "bg-emerald-500" },
+    amber: { bg: "bg-amber-50", text: "text-amber-600", accent: "bg-amber-500" },
   };
+  const c = colorMap[color];
   return (
-    <div className="card p-4 hover-lift relative overflow-hidden">
-      <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${colors[color]}`} />
+    <div className="card p-4 relative overflow-hidden group hover:shadow-card-hover transition-all duration-300">
+      <div className={`absolute top-0 inset-x-0 h-0.5 ${c.accent}`} />
       <div className="flex items-start justify-between pt-1">
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-ink-500 font-semibold">{label}</div>
-          <div className="text-2xl font-bold text-ink-900 mt-1 tabular-nums">
+          <div className="text-[11px] uppercase tracking-wider text-ink-500 font-medium">{label}</div>
+          <div className="text-2xl font-bold text-ink-900 mt-1.5 tabular-nums tracking-tight">
             {loading ? <span className="shimmer inline-block h-7 w-12 rounded" /> : value}
           </div>
-          {sub && <div className="text-[11px] text-ink-500 mt-0.5">{sub}</div>}
+          {sub && <div className="text-[11px] text-ink-400 mt-1">{sub}</div>}
         </div>
-        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${colors[color]} text-white flex items-center justify-center shadow-sm`}>
-          <Icon className="w-4 h-4" />
+        <div className={`w-10 h-10 rounded-xl ${c.bg} ${c.text} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
+          <Icon className="w-[18px] h-[18px]" />
         </div>
       </div>
     </div>
@@ -321,9 +322,9 @@ function SummaryKpi({ label, value, sub, icon: Icon, color, loading }) {
 
 function ChartPlaceholder() {
   return (
-    <div className="h-full flex items-end gap-2 px-6 pb-6">
+    <div className="h-full flex items-end gap-3 px-6 pb-6">
       {[35, 60, 45, 75, 50, 65, 40, 55].map((h, i) => (
-        <div key={i} className="flex-1 shimmer rounded-t-md" style={{ height: `${h}%` }} />
+        <div key={i} className="flex-1 shimmer rounded-t-md" style={{ height: `${h}%`, animationDelay: `${i * 80}ms` }} />
       ))}
     </div>
   );
@@ -331,8 +332,8 @@ function ChartPlaceholder() {
 
 function CheckIcon() {
   return (
-    <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto">
+      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
       </svg>
     </div>

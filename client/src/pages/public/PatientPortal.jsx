@@ -148,7 +148,7 @@ function PatientDashboard({ phone }) {
       )}
 
       {p.active_request ? (
-        <ActiveRequestCard r={p.active_request} onOpen={(id) => navigate(`/track/${id}`)} />
+        <ActiveRequestCard r={p.active_request} />
       ) : (
         <NoActiveCard onCreate={() => navigate("/patient-register")} />
       )}
@@ -171,7 +171,6 @@ function PatientDashboard({ phone }) {
               <HistoryItem
                 key={h.request_id}
                 entry={h}
-                onOpen={() => navigate(`/track/${h.request_id}`)}
                 isLatest={i === 0}
               />
             ))}
@@ -188,12 +187,11 @@ function PatientDashboard({ phone }) {
   );
 }
 
-function ActiveRequestCard({ r, onOpen }) {
+function ActiveRequestCard({ r }) {
   return (
     <section
-      className="card p-5 border-l-4 border-blood-500 animate-fade-up cursor-pointer hover-lift"
+      className="card p-5 border-l-4 border-blood-500 animate-fade-up"
       style={{ animationDelay: "60ms" }}
-      onClick={() => onOpen(r.request_id)}
     >
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
@@ -215,25 +213,25 @@ function ActiveRequestCard({ r, onOpen }) {
           </div>
         </div>
       </div>
-      {r.donor_name && (
+      {r.donor_name ? (
         <div className="mt-3 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-sm">
           <div className="text-emerald-800 font-medium flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4" /> {r.donor_name} confirmed
+            <CheckCircle2 className="w-4 h-4" /> {r.donor_name} is donating for you
           </div>
           {r.donor_phone && (
             <a
               href={`tel:${r.donor_phone}`}
-              onClick={(e) => e.stopPropagation()}
               className="text-emerald-700 text-xs inline-flex items-center gap-1 mt-1 hover:underline"
             >
               <PhoneCall className="w-3 h-3" /> {r.donor_phone}
             </a>
           )}
         </div>
+      ) : (
+        <div className="mt-3 bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-sm text-indigo-800">
+          Finding a donor — you'll get an SMS when someone confirms.
+        </div>
       )}
-      <div className="text-[11px] text-ink-400 mt-3">
-        Tap to open full tracking
-      </div>
     </section>
   );
 }
@@ -327,7 +325,7 @@ function TransfusionCycleCard({ p }) {
   );
 }
 
-function HistoryItem({ entry, onOpen, isLatest }) {
+function HistoryItem({ entry, isLatest }) {
   const completed = entry.status === "fulfilled";
   const failed = entry.status === "failed";
   const tone = completed
@@ -340,10 +338,7 @@ function HistoryItem({ entry, onOpen, isLatest }) {
       <span
         className={`absolute -left-[26px] top-1 w-4 h-4 rounded-full bg-white border-2 ${tone} ${isLatest ? "ring-4 ring-blood-100" : ""}`}
       />
-      <button
-        onClick={onOpen}
-        className="block w-full text-left bg-white hover:bg-ink-50 rounded-lg p-3 -m-3 transition-colors"
-      >
+      <div className="block w-full text-left bg-white rounded-lg p-3 -m-3">
         <div className="flex items-start justify-between gap-2 flex-wrap">
           <div>
             <div className="font-medium text-ink-900 flex items-center gap-1.5">
@@ -374,7 +369,7 @@ function HistoryItem({ entry, onOpen, isLatest }) {
             </div>
           </div>
         </div>
-      </button>
+      </div>
     </li>
   );
 }

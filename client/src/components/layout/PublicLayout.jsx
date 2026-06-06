@@ -1,29 +1,12 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Activity, HandHeart, Heart, Sparkles } from "lucide-react";
+import clsx from "clsx";
 import { LanguageProvider, useLanguage, LANGUAGES } from "../../lib/i18n";
 
 const NAV = [
-  {
-    to: "/donate",
-    labelKey: "donate_panel",
-    icon: HandHeart,
-    sub: "Open needs near you",
-    accent: "blood",
-  },
-  {
-    to: "/me",
-    labelKey: "patient_panel",
-    icon: Heart,
-    sub: "Patient registration",
-    accent: "emerald",
-  },
-  {
-    to: "/donor",
-    labelKey: "donor_panel",
-    icon: Sparkles,
-    sub: "Donor history",
-    accent: "indigo",
-  },
+  { to: "/donate", labelKey: "donate_panel", icon: HandHeart },
+  { to: "/me", labelKey: "patient_panel", icon: Heart },
+  { to: "/donor", labelKey: "donor_panel", icon: Sparkles },
 ];
 
 export default function PublicLayout() {
@@ -34,34 +17,9 @@ export default function PublicLayout() {
   );
 }
 
-const ACCENT = {
-  blood: {
-    bg: "bg-blood-50",
-    text: "text-blood-700",
-    iconBg: "bg-blood-100 text-blood-700",
-    activeRing: "ring-1 ring-blood-200",
-    sub: "text-blood-700/70",
-  },
-  emerald: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    iconBg: "bg-emerald-100 text-emerald-700",
-    activeRing: "ring-1 ring-emerald-200",
-    sub: "text-emerald-700/70",
-  },
-  indigo: {
-    bg: "bg-indigo-50",
-    text: "text-indigo-700",
-    iconBg: "bg-indigo-100 text-indigo-700",
-    activeRing: "ring-1 ring-indigo-200",
-    sub: "text-indigo-700/70",
-  },
-};
-
 function PublicLayoutInner() {
   const { t } = useLanguage();
   const location = useLocation();
-  // Show the rich segmented nav on top-level public routes only (not on /track/:id)
   const showSegmented =
     location.pathname === "/" ||
     location.pathname === "/donate" ||
@@ -70,53 +28,49 @@ function PublicLayoutInner() {
     location.pathname === "/patient-register";
 
   return (
-    <div className="min-h-full flex flex-col bg-ink-50">
-      <header className="bg-white border-b border-ink-200 sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-          <Link to="/donate" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-lg bg-blood-600 text-white flex items-center justify-center font-bold shadow-sm group-hover:shadow-md transition-shadow">
-              B
-            </div>
-            <div>
-              <div className="font-semibold text-ink-900 leading-tight">
+    <div className="min-h-full flex flex-col bg-[#f9fafb]">
+      <header className="sticky top-0 z-30 bg-white border-b border-ink-100">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between gap-4 h-14 sm:h-[3.75rem]">
+            <Link to="/donate" className="flex items-center gap-2.5 group min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-blood-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                B
+              </div>
+              <span className="font-semibold text-ink-900 text-sm hidden sm:block">
                 Blood Warriors
-              </div>
-              <div className="text-[11px] text-ink-500 leading-tight">
-                Real-time donor network
-              </div>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <LanguageToggle />
-            <Link
-              to="/login"
-              className="hidden md:flex items-center gap-2 text-xs text-ink-500 hover:text-ink-800 border border-ink-200 px-3 py-1.5 rounded-full"
-            >
-              <Activity className="w-3.5 h-3.5" />
-              Coordinator
+              </span>
             </Link>
-          </div>
-        </div>
 
-        {showSegmented && (
-          <div className="border-t border-ink-100">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3">
+            <div className="flex items-center gap-2.5 shrink-0">
+              <LanguageToggle />
+              <Link
+                to="/login"
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs text-ink-500 hover:text-ink-800 px-3 py-1.5 rounded-lg border border-ink-200 hover:border-ink-300 transition-colors font-medium"
+              >
+                <Activity className="w-3 h-3" />
+                Coordinator
+              </Link>
+            </div>
+          </div>
+
+          {showSegmented && (
+            <div className="pb-2.5">
               <SegmentedNav t={t} />
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </header>
 
       <main className="flex-1 min-w-0">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <Outlet />
         </div>
       </main>
 
-      <footer className="border-t border-ink-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-xs text-ink-500">
+      <footer className="border-t border-ink-100 bg-white mt-auto">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-ink-400">
           <span>Blood Warriors Foundation · One donation saves up to 3 lives.</span>
-          <Link to="/login" className="hover:text-ink-800">
+          <Link to="/login" className="hover:text-ink-700 transition-colors shrink-0">
             Coordinator portal
           </Link>
         </div>
@@ -127,44 +81,28 @@ function PublicLayoutInner() {
 
 function SegmentedNav({ t }) {
   return (
-    <nav className="grid grid-cols-3 gap-2 sm:gap-3">
+    <nav
+      className="flex gap-0.5 p-0.5 rounded-lg bg-ink-100/70"
+      aria-label="Portal navigation"
+    >
       {NAV.map((item) => {
         const Icon = item.icon;
-        const accent = ACCENT[item.accent];
         return (
           <NavLink
             key={item.to}
             to={item.to}
             end
             className={({ isActive }) =>
-              `group flex items-center gap-2.5 sm:gap-3 px-3 py-2.5 rounded-xl border transition-all ${
+              clsx(
+                "flex-1 flex items-center justify-center gap-1.5 py-2 px-2 sm:px-3 rounded-md text-xs sm:text-[13px] font-medium transition-all duration-150 min-w-0",
                 isActive
-                  ? `${accent.bg} ${accent.activeRing} border-transparent shadow-sm`
-                  : "bg-white border-ink-200 hover:border-ink-300 hover:shadow-sm"
-              }`
+                  ? "bg-white text-ink-900 shadow-xs"
+                  : "text-ink-500 hover:text-ink-700",
+              )
             }
           >
-            {({ isActive }) => (
-              <>
-                <div
-                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 ${accent.iconBg}`}
-                >
-                  <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                </div>
-                <div className="min-w-0">
-                  <div
-                    className={`text-sm font-semibold leading-tight truncate ${
-                      isActive ? accent.text : "text-ink-900"
-                    }`}
-                  >
-                    {t(item.labelKey)}
-                  </div>
-                  <div className={`text-[11px] truncate ${isActive ? accent.sub : "text-ink-500"}`}>
-                    {item.sub}
-                  </div>
-                </div>
-              </>
-            )}
+            <Icon className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{t(item.labelKey)}</span>
           </NavLink>
         );
       })}
@@ -175,16 +113,18 @@ function SegmentedNav({ t }) {
 function LanguageToggle() {
   const { lang, setLang } = useLanguage();
   return (
-    <div className="hidden md:flex items-center gap-1 bg-ink-100 rounded-full p-0.5">
+    <div className="flex items-center bg-ink-100/70 rounded-md p-0.5">
       {LANGUAGES.map((l) => (
         <button
           key={l.code}
+          type="button"
           onClick={() => setLang(l.code)}
-          className={`px-2 py-1 rounded-full text-[11px] font-medium transition-colors ${
+          className={clsx(
+            "px-2 py-1 rounded text-[11px] font-medium transition-all duration-150",
             lang === l.code
-              ? "bg-white shadow-sm text-ink-900"
-              : "text-ink-600 hover:text-ink-900"
-          }`}
+              ? "bg-white shadow-xs text-ink-900"
+              : "text-ink-500 hover:text-ink-700",
+          )}
         >
           {l.short}
         </button>

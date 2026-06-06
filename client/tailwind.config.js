@@ -18,6 +18,7 @@ export default {
           700: "#be123c",
           800: "#9f1239",
           900: "#881337",
+          950: "#4c0519",
         },
         ink: {
           50:  "#f8fafc",
@@ -30,6 +31,7 @@ export default {
           700: "#334155",
           800: "#1e293b",
           900: "#0f172a",
+          950: "#020617",
         },
       },
       fontFamily: {
@@ -45,8 +47,16 @@ export default {
         mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       boxShadow: {
-        card: "0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px -4px rgb(0 0 0 / 0.06)",
-        elevated: "0 4px 24px -4px rgb(0 0 0 / 0.08), 0 8px 32px -8px rgb(99 102 241 / 0.08)",
+        "xs": "0 1px 2px 0 rgb(0 0 0 / 0.03)",
+        "card": "0 1px 3px rgb(0 0 0 / 0.04), 0 4px 12px -2px rgb(0 0 0 / 0.05)",
+        "card-hover": "0 8px 24px -4px rgb(0 0 0 / 0.08), 0 2px 6px -1px rgb(0 0 0 / 0.04)",
+        "elevated": "0 8px 30px -4px rgb(0 0 0 / 0.08), 0 4px 12px -4px rgb(0 0 0 / 0.04)",
+        "panel": "0 20px 60px -12px rgb(0 0 0 / 0.12), 0 8px 20px -8px rgb(0 0 0 / 0.06)",
+        "glow-blood": "0 0 0 3px rgb(225 29 72 / 0.1), 0 4px 12px -2px rgb(225 29 72 / 0.15)",
+        "glow-indigo": "0 0 0 3px rgb(99 102 241 / 0.1), 0 4px 12px -2px rgb(99 102 241 / 0.15)",
+      },
+      transitionTimingFunction: {
+        "spring": "cubic-bezier(0.34, 1.56, 0.64, 1)",
       },
     },
   },

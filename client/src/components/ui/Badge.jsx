@@ -14,7 +14,7 @@ export function StatusBadge({ status, className, compact = false }) {
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1.5 rounded-full font-medium border",
+        "inline-flex items-center gap-1.5 rounded-lg font-medium border",
         compact ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs",
         STATUS_COLORS[status] || "bg-ink-50 text-ink-700 border-ink-200",
         className,
@@ -37,7 +37,7 @@ export function UrgencyBadge({ urgency, className, compact = false }) {
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1.5 rounded-full font-semibold border",
+        "inline-flex items-center gap-1.5 rounded-lg font-semibold border",
         compact ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs",
         URGENCY_COLORS[urgency] || "bg-ink-50 text-ink-700 border-ink-200",
         className,
@@ -82,12 +82,12 @@ export function BloodGroupChip({ bloodGroup, className, size = "md" }) {
 
 export function Pill({ children, tone = "default", dot = false, className }) {
   const tones = {
-    default: "bg-ink-50 text-ink-700 border-ink-200",
-    success: "bg-emerald-50 text-emerald-800 border-emerald-200",
-    danger: "bg-blood-50 text-blood-800 border-blood-200",
-    warn: "bg-amber-50 text-amber-800 border-amber-200",
-    info: "bg-indigo-50 text-indigo-800 border-indigo-200",
-    violet: "bg-violet-50 text-violet-800 border-violet-200",
+    default: "bg-ink-50 text-ink-700 border-ink-200/80",
+    success: "bg-emerald-50 text-emerald-700 border-emerald-200/80",
+    danger: "bg-blood-50 text-blood-700 border-blood-200/80",
+    warn: "bg-amber-50 text-amber-700 border-amber-200/80",
+    info: "bg-indigo-50 text-indigo-700 border-indigo-200/80",
+    violet: "bg-violet-50 text-violet-700 border-violet-200/80",
   };
   const dotColors = {
     default: "bg-ink-400",
@@ -100,7 +100,7 @@ export function Pill({ children, tone = "default", dot = false, className }) {
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1.5 rounded-full text-[11px] font-medium border px-2 py-0.5",
+        "inline-flex items-center gap-1.5 rounded-md text-[11px] font-medium border px-2 py-0.5",
         tones[tone],
         className,
       )}

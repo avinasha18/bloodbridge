@@ -76,7 +76,7 @@ export default function Requests() {
         action={
           activeFilterCount > 0 ? (
             <button
-              className="text-xs text-blood-600 hover:underline font-medium"
+              className="text-xs text-blood-600 hover:text-blood-700 font-medium transition-colors"
               onClick={() => setFilters({ status: "", blood_group: "", urgency: "" })}
             >
               Clear all
@@ -85,7 +85,7 @@ export default function Requests() {
         }
         noPadding
       >
-        <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-ink-50/40">
           <FilterSelect
             label="Status"
             value={filters.status}
@@ -171,7 +171,7 @@ export default function Requests() {
                   <TD muted>{r.search_radius_km} km</TD>
                   <TD muted>{relativeTime(r.created_at)}</TD>
                   <TD>
-                    <ChevronRight className="w-4 h-4 text-ink-300 group-hover:text-blood-500 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-ink-300 group-hover:text-blood-500 group-hover:translate-x-0.5 transition-all duration-200" />
                   </TD>
                 </TR>
               ))}
@@ -186,7 +186,7 @@ export default function Requests() {
 function FilterSelect({ label, value, onChange, options }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">{label}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
