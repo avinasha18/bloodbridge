@@ -91,7 +91,7 @@ def get_protocol_for(
         city=city or "Default",
         initial_batch_size=5,
         initial_radius_km=10,
-        escalation_wait_h=2.0,
+        escalation_wait_h=12.0,
         proactive_days_ahead=7,
     )
 

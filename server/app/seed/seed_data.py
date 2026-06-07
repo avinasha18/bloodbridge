@@ -377,7 +377,7 @@ def seed_protocols(db: Session) -> None:
                 city=city,
                 initial_batch_size=batch,
                 initial_radius_km=radius,
-                escalation_wait_h=2.0,
+                escalation_wait_h=12.0,
                 proactive_days_ahead=days,
                 last_updated_by="seed",
                 update_reason="initial seed default",

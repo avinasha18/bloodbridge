@@ -31,13 +31,28 @@ from app.services.outreach_delivery import send_outreach_batch, _city
 
 logger = logging.getLogger(__name__)
 
-URGENCY_WAIT_SECONDS_SIM = {
-    "critical": 12,
-    "urgent": 18,
-    "routine": 25,
-}
-
 MAX_ESCALATIONS = 3
+
+
+def _outreach_wait_seconds(req: BloodRequest, protocol) -> int:
+    """How long to wait for donor YES before widening search.
+
+    Production: hours from protocol (default 12h for urgent).
+    Local quick demo: set OUTREACH_WAIT_DEMO_SECONDS=18 in .env.
+    """
+    demo = settings.outreach_wait_demo_seconds
+    if demo is not None:
+        return max(1, int(demo))
+
+    base_h = float(
+        protocol.escalation_wait_h
+        if protocol and protocol.escalation_wait_h
+        else settings.outreach_escalation_wait_hours_default
+    )
+    mult = {"critical": 0.5, "urgent": 1.0, "routine": 1.5}.get(
+        (req.urgency or "routine").lower(), 1.0
+    )
+    return int(base_h * mult * 3600)
 
 
 class OrchestratorClient:
@@ -174,7 +189,14 @@ def _local_orchestrator_auto_outreach(request_id: str) -> None:
             req.status = "outreach_sent"
             db.commit()
 
-            wait = URGENCY_WAIT_SECONDS_SIM[req.urgency]
+            wait = _outreach_wait_seconds(req, protocol)
+            logger.info(
+                "Request %s outreach batch %s — waiting %s s (%.1f h) for donor replies",
+                request_id,
+                level + 1,
+                wait,
+                wait / 3600,
+            )
             elapsed = 0
             slice_s = 1
             while elapsed < wait:

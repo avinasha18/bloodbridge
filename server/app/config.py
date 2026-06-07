@@ -101,6 +101,11 @@ class Settings(BaseSettings):
     outreach_batch_size: int = 2
     # Seconds between SNS sends in one batch (avoids carrier/AWS throttling).
     sms_send_delay_seconds: float = 0.6
+    # Auto-outreach wait before escalating (when manual_outreach=false).
+    # None = use system_protocols.escalation_wait_h (default 12h urgent).
+    # Set e.g. 18 for quick local demo only.
+    outreach_wait_demo_seconds: Optional[int] = None
+    outreach_escalation_wait_hours_default: float = 12.0
     # Dev: send every SMS to this verified number instead of donor.phone
     sms_override_phone: str = ""
     # Phones assigned to seeded demo donors (shown in UI diagnostics)

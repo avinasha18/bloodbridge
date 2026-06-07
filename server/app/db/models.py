@@ -277,7 +277,7 @@ class SystemProtocol(Base):
     city: Mapped[str] = mapped_column(String(100), index=True)
     initial_batch_size: Mapped[int] = mapped_column(Integer, default=5)
     initial_radius_km: Mapped[int] = mapped_column(Integer, default=10)
-    escalation_wait_h: Mapped[float] = mapped_column(Numeric(4, 1), default=2.0)
+    escalation_wait_h: Mapped[float] = mapped_column(Numeric(4, 1), default=12.0)
     proactive_days_ahead: Mapped[int] = mapped_column(Integer, default=7)
     last_updated_by: Mapped[str] = mapped_column(String(50), default="system")
     last_updated_at: Mapped[datetime] = mapped_column(
