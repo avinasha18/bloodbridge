@@ -207,6 +207,11 @@ function DonorDashboard({ phone }) {
                   </span>
                 </div>
                 <div className="text-xs text-ink-500 mt-1 truncate">{n.hospital_name}</div>
+                {n.patient_initial && (
+                  <div className="text-xs font-medium text-ink-700 mt-0.5 truncate">
+                    For {n.patient_initial}
+                  </div>
+                )}
                 <div className="text-[11px] text-ink-400 mt-1">{relativeTime(n.created_at)}</div>
               </div>
             ))}

@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Users,
   ChevronRight,
+  User,
 } from "lucide-react";
 import { endpoints } from "../../lib/api";
 import { usePoll } from "../../hooks/useAsync";
@@ -268,6 +269,12 @@ function NeedCard({ need, onVolunteer, ctaLabel }) {
 
         {/* Info */}
         <div className="flex-1 space-y-2">
+          {need.patient_initial && (
+            <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+              <User className="w-3.5 h-3.5 text-blood-500 shrink-0" />
+              <span>{need.patient_initial}</span>
+            </div>
+          )}
           <div className="flex items-start gap-2 text-sm text-ink-700">
             <MapPin className="w-3.5 h-3.5 mt-0.5 text-ink-400 shrink-0" />
             <span className="line-clamp-2 leading-snug font-medium">{need.hospital_name || "Hospital"}</span>

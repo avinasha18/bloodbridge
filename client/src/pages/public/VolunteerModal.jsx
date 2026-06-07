@@ -78,6 +78,9 @@ export default function VolunteerModal({ need, onClose, onSuccess }) {
               <div className="font-semibold text-ink-900 text-sm">
                 {need.blood_group} · {need.hospital_name?.split(",")[0] || "Hospital"}
               </div>
+              {need.patient_initial && (
+                <div className="text-xs text-ink-500 mt-0.5">For {need.patient_initial}</div>
+              )}
             </div>
           </div>
           <button
