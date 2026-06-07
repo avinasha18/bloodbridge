@@ -32,6 +32,23 @@ class PatientCreate(PatientBase):
     blood_group: str
 
 
+class PatientUpdate(BaseModel):
+    """Coordinator edits — especially transfusion cycle for proactive alerts."""
+
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    contact_name: Optional[str] = None
+    hospital_name: Optional[str] = None
+    hospital_lat: Optional[float] = None
+    hospital_lon: Optional[float] = None
+    city: Optional[str] = None
+    notifications_enabled: Optional[bool] = None
+    quantity_required: Optional[int] = None
+    last_transfusion_date: Optional[date] = None
+    expected_next_transfusion_date: Optional[date] = None
+    frequency_in_days: Optional[int] = None
+
+
 class PatientRead(PatientBase):
     model_config = ConfigDict(from_attributes=True)
 

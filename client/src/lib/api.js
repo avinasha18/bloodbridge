@@ -61,6 +61,8 @@ export const endpoints = {
   upcomingTransfusions: (days = 7) =>
     api.get("/patients/upcoming", { params: { days_ahead: days } }).then((r) => r.data),
   getPatient: (id) => api.get(`/patients/${id}`).then((r) => r.data),
+  updatePatient: (id, payload) =>
+    api.patch(`/patients/${id}`, payload).then((r) => r.data),
 
   // Requests
   listRequests: (params) => api.get("/requests", { params }).then((r) => r.data),

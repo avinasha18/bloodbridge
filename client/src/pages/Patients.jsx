@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Heart, Calendar } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
 import { Section } from "../components/ui/Card";
@@ -56,7 +57,11 @@ export default function Patients() {
             <tbody>
               {upcoming.data?.map((t) => (
                 <TR key={t.patient_id}>
-                  <TD primary>{t.name}</TD>
+                  <TD primary>
+                    <Link to={`/patients/${t.patient_id}`} className="hover:underline">
+                      {t.name}
+                    </Link>
+                  </TD>
                   <TD><BloodGroupChip bloodGroup={t.blood_group} size="sm" /></TD>
                   <TD muted className="max-w-[200px] truncate">{t.hospital_name}</TD>
                   <TD muted>
@@ -123,7 +128,9 @@ export default function Patients() {
                 {list.data?.items?.map((p) => (
                   <TR key={p.id}>
                     <TD primary>
-                      {p.name}
+                      <Link to={`/patients/${p.id}`} className="hover:underline">
+                        {p.name}
+                      </Link>
                       {p.contact_name && p.contact_name !== p.name && (
                         <div className="text-[11px] text-ink-400 font-normal mt-0.5">
                           via {p.contact_name}

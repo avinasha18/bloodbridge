@@ -14,6 +14,7 @@ from app.schemas.patient import (
     PatientCreate,
     PatientNotificationRead,
     PatientRead,
+    PatientUpdate,
     UpcomingTransfusion,
 )
 
@@ -107,6 +108,41 @@ def get_patient(patient_id: str, db: Session = Depends(get_db)):
 def create_patient(payload: PatientCreate, db: Session = Depends(get_db)):
     patient = Patient(**payload.model_dump())
     db.add(patient)
+    db.commit()
+    db.refresh(patient)
+    return patient
+
+
+@router.patch("/{patient_id}", response_model=PatientRead)
+def update_patient(
+    patient_id: str,
+    payload: PatientUpdate,
+    db: Session = Depends(get_db),
+):
+    """Update patient profile and transfusion cycle (enables proactive alerts)."""
+    patient = db.query(Patient).get(patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    data = payload.model_dump(exclude_unset=True)
+    freq = data.get("frequency_in_days")
+    if freq is not None and freq < 1:
+        raise HTTPException(status_code=400, detail="frequency_in_days must be at least 1")
+
+    last_tx = data.get("last_transfusion_date")
+    next_tx = data.get("expected_next_transfusion_date")
+    if (
+        next_tx is None
+        and last_tx is not None
+        and (freq is not None or patient.frequency_in_days)
+    ):
+        interval = freq if freq is not None else patient.frequency_in_days
+        if interval:
+            data["expected_next_transfusion_date"] = last_tx + timedelta(days=interval)
+
+    for key, value in data.items():
+        setattr(patient, key, value)
+
     db.commit()
     db.refresh(patient)
     return patient

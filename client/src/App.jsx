@@ -10,6 +10,7 @@ import NewRequest from "./pages/NewRequest";
 import Donors from "./pages/Donors";
 import DonorDetail from "./pages/DonorDetail";
 import Patients from "./pages/Patients";
+import PatientDetail from "./pages/PatientDetail";
 import Analytics from "./pages/Analytics";
 import AI from "./pages/AI";
 import Protocols from "./pages/Protocols";
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="/donors" element={<Donors />} />
         <Route path="/donors/:id" element={<DonorDetail />} />
         <Route path="/patients" element={<Patients />} />
+        <Route path="/patients/:id" element={<PatientDetail />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/ai" element={<AI />} />
         <Route path="/protocols" element={<Protocols />} />
