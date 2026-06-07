@@ -6,9 +6,9 @@ import Spinner from "../../components/ui/Spinner";
 const DEFAULT_SUGGESTIONS = {
   patient: [
     "What's happening with my request?",
-    "When will a donor accept?",
+    "When will someone agree to help?",
     "What happens if nobody replies?",
-    "How do I tell the donor where to go?",
+    "How will I know where to go for the transfusion?",
   ],
   donor: [
     "How often can I donate?",

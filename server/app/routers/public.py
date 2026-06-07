@@ -131,6 +131,25 @@ STATUS_LABELS = {
     "failed": "Could not arrange in time",
 }
 
+# Plain language for the patient portal (/me) — recipient-focused, not donor-focused.
+PATIENT_STATUS_LABELS = {
+    "pending": "Request received",
+    "matching": "Finding donors nearby",
+    "outreach_sent": "Contacting donors",
+    "reserved": "Donor matched",
+    "confirmed": "Visit confirmed",
+    "fulfilled": "Blood received",
+    "failed": "Could not find a donor",
+}
+
+PATIENT_STATUS_HINTS = {
+    "pending": "We've received your blood need and will start matching donors soon.",
+    "matching": "We're identifying compatible donors near your hospital.",
+    "outreach_sent": "Donors have been contacted. We'll text you when someone agrees to help.",
+    "reserved": "A donor has agreed to help. Hospital visit details will be shared shortly.",
+    "confirmed": "Your donor has confirmed they'll come on the scheduled day.",
+}
+
 
 def _hospital_city(req: BloodRequest) -> Optional[str]:
     if not req.hospital_name:
@@ -590,7 +609,7 @@ def _serialize_patient_request(db: Session, r: BloodRequest) -> PatientHistoryRe
         request_id=r.id,
         blood_group=r.blood_group,
         status=r.status,
-        status_label=STATUS_LABELS.get(r.status, r.status.title()),
+        status_label=PATIENT_STATUS_LABELS.get(r.status, r.status.replace("_", " ").title()),
         urgency=r.urgency,
         hospital_name=r.hospital_name,
         units_needed=r.units_needed,
@@ -654,7 +673,10 @@ def _build_patient_dashboard(db: Session, patient: Patient) -> PatientDashboard:
 
     suggested = None
     if active:
-        suggested = f"Your active request is at status: {active.status_label}."
+        suggested = PATIENT_STATUS_HINTS.get(
+            active.status,
+            f"Your request status: {active.status_label}.",
+        )
     elif days_until is not None and days_until <= 3 and days_until >= 0:
         suggested = (
             f"Your next transfusion is in {days_until} day(s). "

@@ -134,7 +134,7 @@ function PatientDashboard({ phone }) {
           <div className="text-right">
             <div className="text-5xl sm:text-6xl font-bold tabular-nums">{p.fulfilled_count}</div>
             <div className="text-white/80 text-xs uppercase tracking-wide">
-              completed donations
+              {p.fulfilled_count === 1 ? "transfusion received" : "transfusions received"}
             </div>
           </div>
         </div>
@@ -158,13 +158,13 @@ function PatientDashboard({ phone }) {
       <section className="card p-5 animate-fade-up" style={{ animationDelay: "180ms" }}>
         <h2 className="font-semibold text-ink-900 mb-3 flex items-center gap-2">
           <Clock className="w-4 h-4 text-indigo-600" />
-          Past requests
+          Past blood needs
           <span className="text-xs text-ink-500 font-normal">
             · {p.history.length} total
           </span>
         </h2>
         {p.history.length === 0 ? (
-          <div className="text-sm text-ink-500 italic">No past requests yet.</div>
+          <div className="text-sm text-ink-500 italic">No past blood needs yet.</div>
         ) : (
           <ol className="relative border-l border-ink-200 pl-4 ml-2 space-y-4">
             {p.history.map((h, i) => (
@@ -196,7 +196,7 @@ function ActiveRequestCard({ r }) {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="text-xs uppercase tracking-wide text-blood-600">
-            Active request
+            Current blood need
           </div>
           <h2 className="text-xl font-semibold mt-1 text-ink-900 flex items-center gap-2">
             <Droplet className="w-5 h-5 text-blood-600" />
@@ -216,8 +216,11 @@ function ActiveRequestCard({ r }) {
       {r.donor_name ? (
         <div className="mt-3 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-sm">
           <div className="text-emerald-800 font-medium flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4" /> {r.donor_name} is donating for you
+            <CheckCircle2 className="w-4 h-4" /> {r.donor_name} has agreed to help you
           </div>
+          <p className="text-emerald-700/80 text-xs mt-1">
+            A matched donor for this request — the coordinator will share hospital visit details.
+          </p>
           {r.donor_phone && (
             <a
               href={`tel:${r.donor_phone}`}
@@ -229,7 +232,7 @@ function ActiveRequestCard({ r }) {
         </div>
       ) : (
         <div className="mt-3 bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-sm text-indigo-800">
-          Finding a donor — you'll get an SMS when someone confirms.
+          Searching for a compatible donor — we'll text you when someone agrees to help.
         </div>
       )}
     </section>
@@ -240,7 +243,7 @@ function NoActiveCard({ onCreate }) {
   return (
     <section className="card p-5 text-center animate-fade-up" style={{ animationDelay: "60ms" }}>
       <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-      <h3 className="font-semibold text-ink-900">No active request</h3>
+      <h3 className="font-semibold text-ink-900">No current blood need</h3>
       <p className="text-sm text-ink-500 mt-1">
         When you need blood again, register a new request here.
       </p>
@@ -348,7 +351,7 @@ function HistoryItem({ entry, isLatest }) {
             <div className="text-xs text-ink-600 mt-0.5">{entry.hospital_name}</div>
             {entry.donor_name && (
               <div className="text-xs text-emerald-700 mt-0.5">
-                Donor: {entry.donor_name}
+                Matched donor: {entry.donor_name}
               </div>
             )}
           </div>

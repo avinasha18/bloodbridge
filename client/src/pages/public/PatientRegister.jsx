@@ -111,8 +111,8 @@ export default function PatientRegister() {
           Tell us what you need
         </h1>
         <p className="text-sm text-ink-500 mt-2 max-w-prose">
-          You will receive SMS updates at every step — when a donor accepts,
-          who they are, when they confirm, and when the donation is done.
+          You will receive SMS updates at every step — when someone agrees to help,
+          who they are, when the visit is confirmed, and when you've received blood.
         </p>
       </header>
 
